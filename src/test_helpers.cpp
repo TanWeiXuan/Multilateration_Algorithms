@@ -66,6 +66,8 @@ void printTestParams(const TestParameters& params)
     {
         std::cout << "  Random Seed: Not specified, using std::random_device\n";
     }
+
+    std::cout << std::format("  Number of Runs: {}\n", params.numRuns);
 }
 
 // END OF FILE //

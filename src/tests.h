@@ -12,6 +12,7 @@ struct TestParameters
     std::vector<Eigen::Vector3d> anchorPositions = {};
     double rangeNoiseStdDev = 0.0;
     std::optional<uint64_t> randomSeed = std::nullopt;
+    size_t numRuns = 1;
 };
 
 // Test for ordinaryLeastSquaresWikipedia
