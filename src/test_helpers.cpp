@@ -70,4 +70,32 @@ void printTestParams(const TestParameters& params)
     std::cout << std::format("  Number of Runs: {}\n", params.numRuns);
 }
 
+void computeAndPrintResults(
+    const std::vector<Eigen::Vector3d>& estimatedPositions,
+    const TestParameters& params
+)
+{
+    Eigen::Vector3d err = Eigen::Vector3d::Zero();
+    for(const Eigen::Vector3d& estPos : estimatedPositions)
+    {
+        Eigen::Vector3d diff = estPos - params.truePosition;
+        err += diff.cwiseAbs();
+    }
+    err /= static_cast<double>(estimatedPositions.size());
+
+    Eigen::Matrix3d errCov = Eigen::Matrix3d::Zero();
+    for (const auto& estPos : estimatedPositions) {
+        Eigen::Vector3d diff = (estPos - params.truePosition) - err;
+        errCov += diff * diff.transpose();
+    }
+    errCov /= static_cast<double>(estimatedPositions.size());
+
+    std::cout << "Results:\n";
+    std::cout << std::format("  Mean Error: [{:.2f}, {:.2f}, {:.2f}] (m)\n", err.x(), err.y(), err.z());
+    std::cout << "  Error Covariance Matrix (m^2):\n";
+    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", errCov(0,0), errCov(0,1), errCov(0,2));
+    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", errCov(1,0), errCov(1,1), errCov(1,2));
+    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", errCov(2,0), errCov(2,1), errCov(2,2));
+}
+
 // END OF FILE //

@@ -27,4 +27,9 @@ std::vector<double> generateNoisyRanges(
 
 void printTestParams(const TestParameters& params);
 
+void computeAndPrintResults(
+    const std::vector<Eigen::Vector3d>& estimatedPositions,
+    const TestParameters& params
+);
+
 // END OF FILE //

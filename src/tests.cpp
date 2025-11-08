@@ -29,6 +29,7 @@ void runTest1(const TestParameters& params)
 
     std::cout << "\n";
 
+    computeAndPrintResults(estimatedPositions, params);
 }
 
 // END OF FILE //
