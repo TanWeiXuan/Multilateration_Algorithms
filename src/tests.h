@@ -14,7 +14,7 @@ struct TestParameters
     std::optional<uint64_t> randomSeed = std::nullopt;
 };
 
-
+// Test for ordinaryLeastSquaresWikipedia
 void runTest1(const TestParameters& params);
 
 // END OF FILE //
