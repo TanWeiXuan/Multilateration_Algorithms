@@ -1,5 +1,6 @@
 #include "methods.h"
 
+#include <format>
 #include <functional>
 #include <iostream>
 
@@ -50,7 +51,7 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
         Eigen::Vector3d p_i = anchorPositions[i];
         double d_i = ranges[i];
 
-        A.row(i) = 2.0 * (p_i - anchorPosCentroid).transpose();
+        A.row(i) = 2.0 * (anchorPosCentroid - p_i).transpose();
         b(i) = sq(d_i) - meanSquaredRange - p_i.squaredNorm() + meanSquaredNormAnchorPos;
     }
 
