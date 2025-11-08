@@ -38,7 +38,7 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
     Eigen::MatrixXd A(N, 3);
     Eigen::VectorXd b(N);
 
-    double squaredMeanRange = N_inv * sumOver(ranges, std::function(sq<double>));
+    double meanSquaredRange = N_inv * sumOver(ranges, std::function(sq<double>));
 
     std::function squaredNorm = [](const Eigen::Vector3d& v) { return v.squaredNorm(); };
     double meanSquaredNormAnchorPos = N_inv * sumOver(anchorPositions, squaredNorm);
@@ -51,7 +51,7 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
         double d_i = ranges[i];
 
         A.row(i) = 2.0 * (p_i - anchorPosCentroid).transpose();
-        b(i) = sq(d_i) - squaredMeanRange - p_i.squaredNorm() + meanSquaredNormAnchorPos;
+        b(i) = sq(d_i) - meanSquaredRange - p_i.squaredNorm() + meanSquaredNormAnchorPos;
     }
 
     Eigen::MatrixXd A_T = A.transpose();
