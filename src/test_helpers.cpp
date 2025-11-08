@@ -8,6 +8,41 @@ std::mt19937_64 makeRandomEngine(std::optional<uint64_t> seed)
     return std::mt19937_64(seed.value_or(std::random_device{}()));
 }
 
+double generateNoisyRange(
+    const Eigen::Vector3d& truePosition,
+    const Eigen::Vector3d& anchorPosition,
+    double rangeNoiseStdDev,
+    std::mt19937_64& rng
+)
+{
+    std::normal_distribution<double> noiseDist(0.0, rangeNoiseStdDev);
+    double trueRange = (truePosition - anchorPosition).norm();
+    double noisyRange = trueRange + noiseDist(rng);
+    return noisyRange;
+}
+
+std::vector<double> generateNoisyRanges(
+    const Eigen::Vector3d& truePosition,
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    double rangeNoiseStdDev,
+    std::mt19937_64& rng
+)
+{
+    std::normal_distribution<double> noiseDist(0.0, rangeNoiseStdDev);
+
+    std::vector<double> ranges;
+    ranges.reserve(anchorPositions.size());
+
+    for(const Eigen::Vector3d& anchorPos : anchorPositions)
+    {
+        ranges.emplace_back(
+            generateNoisyRange(truePosition, anchorPos, rangeNoiseStdDev, rng)
+        );
+    }
+
+    return ranges;
+}
+
 void printTestParams(const TestParameters& params)
 {
     std::cout << "Test Parameters:\n";
