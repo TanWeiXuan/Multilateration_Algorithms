@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <optional>
+#include <functional>
 
 #include <Eigen/Dense>
 
@@ -15,7 +16,13 @@ struct TestParameters
     size_t numRuns = 1;
 };
 
-// Test for ordinaryLeastSquaresWikipedia
-void runTest1(const TestParameters& params);
+typedef std::function< Eigen::Vector3d(const std::vector<Eigen::Vector3d>&, const std::vector<double>&) > MultilaterationFunction;
+
+void runTests(const TestParameters& params);
+
+void runTest(
+    const TestParameters& params, 
+    MultilaterationFunction multilaterationMethod
+);
 
 // END OF FILE //

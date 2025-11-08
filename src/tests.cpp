@@ -7,11 +7,25 @@
 
 #include <Eigen/Dense>
 
-void runTest1(const TestParameters& params)
+void runTests(const TestParameters& params)
 {
-    std::cout << "Test 1:\n";
+    std::cout << "Running Tests...\n";
     printTestParams(params);
 
+    std::cout << "\nTest 1 (Ordinary Least Squares - Wikipedia Method):\n";
+    runTest(params, ordinaryLeastSquaresWikipedia);
+
+    std::cout << "\nTest 2 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    runTest(params, nonLinearLeastSquaresEigenLevenbergMarquardt);
+
+    std::cout << "\nAll tests completed.\n";
+}
+
+void runTest(
+    const TestParameters& params, 
+    MultilaterationFunction multilaterationMethod
+)
+{
     std::mt19937_64 rng = makeRandomEngine(params.randomSeed);
 
     std::vector<Eigen::Vector3d> estimatedPositions;
@@ -23,11 +37,9 @@ void runTest1(const TestParameters& params)
         generateNoisyRanges(params.truePosition, params.anchorPositions, params.rangeNoiseStdDev, rng);
 
         estimatedPositions.emplace_back(
-            ordinaryLeastSquaresWikipedia(params.anchorPositions, noisyRanges)
+            multilaterationMethod(params.anchorPositions, noisyRanges)
         );
     }
-
-    std::cout << "\n";
 
     computeAndPrintResults(estimatedPositions, params);
 }

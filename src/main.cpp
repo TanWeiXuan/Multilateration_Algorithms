@@ -7,7 +7,7 @@
 
 int main(int argc, char const *argv[])
 {
-    std::cout << std::format("Multilateration Methods.\n");
+    std::cout << std::format("Multilateration Methods.\n\n");
 
     TestParameters testParams;
     testParams.truePosition = Eigen::Vector3d(0.0, 0.0, 5.0);
@@ -25,7 +25,7 @@ int main(int argc, char const *argv[])
     testParams.randomSeed = 42;
     testParams.numRuns = 10'000;
 
-    runTest1(testParams);
+    runTests(testParams);
 
     return 0;
 }
