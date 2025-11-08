@@ -16,6 +16,11 @@ void printTestParams(const TestParameters& params)
     std::cout << "  Anchor Positions:\n";
     for(size_t i = 0; i < params.anchorPositions.size(); ++i)
     {
+        if(i == 8)
+        {
+            std::cout << "    ... ...\n";
+            break;
+        }
         const Eigen::Vector3d& pos = params.anchorPositions[i];
         std::cout << std::format("    {}: [{:.2f}, {:.2f}, {:.2f}]\n", i, pos.x(), pos.y(), pos.z());
     }
