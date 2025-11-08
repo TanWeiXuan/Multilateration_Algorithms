@@ -16,9 +16,7 @@ double generateNoisyRange(
 )
 {
     std::normal_distribution<double> noiseDist(0.0, rangeNoiseStdDev);
-    double trueRange = (truePosition - anchorPosition).norm();
-    double noisyRange = trueRange + noiseDist(rng);
-    return noisyRange;
+    return (truePosition - anchorPosition).norm() + noiseDist(rng);
 }
 
 std::vector<double> generateNoisyRanges(
@@ -28,8 +26,6 @@ std::vector<double> generateNoisyRanges(
     std::mt19937_64& rng
 )
 {
-    std::normal_distribution<double> noiseDist(0.0, rangeNoiseStdDev);
-
     std::vector<double> ranges;
     ranges.reserve(anchorPositions.size());
 
