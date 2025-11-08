@@ -23,7 +23,7 @@ int main(int argc, char const *argv[])
     };
     testParams.rangeNoiseStdDev = 0.25;
     testParams.randomSeed = 42;
-    testParams.numRuns = 10,000;
+    testParams.numRuns = 10'000;
 
     runTest1(testParams);
 
