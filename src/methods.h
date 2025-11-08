@@ -16,4 +16,15 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
     const std::vector<double>& ranges
 );
 
+/**
+ * @brief Method using Eigen's Levenberg-Marquardt implementation to solve the non-linear least squares problem
+ * @param anchorPositions 
+ * @param ranges 
+ * @return Eigen::Vector3d Estimated position
+ */
+Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges
+);
+
 // END OF FILE //

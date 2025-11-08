@@ -4,6 +4,8 @@
 #include <functional>
 #include <iostream>
 
+#include <unsupported/Eigen/NonLinearOptimization>
+
 namespace // anonymous namespace for helper functions
 {
     template<typename T>
@@ -25,6 +27,40 @@ namespace // anonymous namespace for helper functions
         }
         return sum;
     }
+
+    // Generic functor for Eigen's Levenberg-Marquardt Solver, copied from Eigen's tests
+    template <typename Scalar_, int NX = Eigen::Dynamic, int NY = Eigen::Dynamic>
+    struct EigenLmFunctor {
+        typedef Scalar_ Scalar;
+        enum { 
+            InputsAtCompileTime = NX, 
+            ValuesAtCompileTime = NY 
+        };
+        typedef Eigen::Matrix<Scalar, InputsAtCompileTime, 1> InputType;
+        typedef Eigen::Matrix<Scalar, ValuesAtCompileTime, 1> ValueType;
+        typedef Eigen::Matrix<Scalar, ValuesAtCompileTime, InputsAtCompileTime> JacobianType;
+
+        const int m_inputs, m_values;
+
+        EigenLmFunctor() 
+        : m_inputs(InputsAtCompileTime), m_values(ValuesAtCompileTime) 
+        {
+            // empty
+        }
+
+        EigenLmFunctor(int inputs, int values) 
+        : m_inputs(inputs), m_values(values) 
+        {
+            // empty
+        }
+
+        int inputs() const { return m_inputs; }
+        int values() const { return m_values; }
+
+        // you should define that in the subclass :
+        // void operator() (const InputType& x, ValueType* v, JacobianType* _j=0) const;
+    };
+
 } // namespace anonymous
 
 
@@ -60,6 +96,52 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
     // Solve using pseudo-inverse
     // See https://libeigen.gitlab.io/eigen/docs-nightly/group__LeastSquares.html for better methods to solve overdetermined Ax = b
     Eigen::Vector3d posEstimate = (A_T * A).inverse() * A_T * b;
+
+    return posEstimate;
+}
+
+Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges
+)
+{
+    struct MultilaterationFunctor : EigenLmFunctor<double>
+    {
+        const std::vector<Eigen::Vector3d>& mAnchorPositions;
+        const std::vector<double>& mRanges;
+
+        MultilaterationFunctor(
+            const std::vector<Eigen::Vector3d>& anchorPositions,
+            const std::vector<double>& ranges
+        )
+        : EigenLmFunctor<double>(3, static_cast<int>(ranges.size())),
+          mAnchorPositions(anchorPositions),
+          mRanges(ranges)
+        {
+            // empty
+        }
+
+        int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const
+        {
+            const size_t N = mRanges.size();
+            for(size_t i = 0; i < N; ++i)
+            {
+                double modeledRange = (x - mAnchorPositions[i]).norm();
+                fvec(i) = modeledRange - mRanges[i];
+            }
+            return 0;
+        }
+    };
+
+    // Initial guess
+    Eigen::VectorXd posEstimate = ordinaryLeastSquaresWikipedia(anchorPositions, ranges);
+
+    MultilaterationFunctor functor(anchorPositions, ranges);
+    Eigen::NumericalDiff<MultilaterationFunctor> numDiff(functor);
+    Eigen::LevenbergMarquardt<Eigen::NumericalDiff<MultilaterationFunctor>, double> lmSolver(numDiff);
+    lmSolver.parameters.maxfev = 1000;
+
+    lmSolver.minimize(posEstimate);
 
     return posEstimate;
 }
