@@ -3,12 +3,13 @@
 
 #include <Eigen/Dense>
 
+#include "tests.h"
+
 int main(int argc, char const *argv[])
 {
-    std::cout << std::format("Hello world!\n");
-
-    Eigen::Vector3d vec(1.0, 2.0, 3.0);
-    std::cout << vec.transpose() << "\n";
+    std::cout << std::format("Multilateration Methods.\n");
 
     return 0;
 }
+
+// END OF FILE //
