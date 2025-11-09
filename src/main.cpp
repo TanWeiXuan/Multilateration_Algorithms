@@ -24,6 +24,8 @@ int main(int argc, char const *argv[])
     testParams.rangeNoiseStdDev = 0.25;
     testParams.randomSeed = 42;
     testParams.numRuns = 10'000;
+    testParams.rangeOutlierRatio = 0.0;
+    testParams.rangeOutlierMagnitude = 100.0;
 
     runTests(testParams);
 

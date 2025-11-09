@@ -10,13 +10,30 @@
 void runTests(const TestParameters& params)
 {
     std::cout << "Running Tests...\n";
-    printTestParams(params);
 
-    std::cout << "\nTest 1 (Ordinary Least Squares - Wikipedia Method):\n";
-    runTest(params, ordinaryLeastSquaresWikipedia);
+    TestParameters testParams = params;
+    printTestParams(testParams);
 
-    std::cout << "\nTest 2 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
-    runTest(params, nonLinearLeastSquaresEigenLevenbergMarquardt);
+    // No ouliers
+    std::cout << std::format("\nTest Set 1 -- Std Dev: {:.2f}m, No Outliers\n", testParams.rangeNoiseStdDev);
+    std::cout << "\nTest 1.1 (Ordinary Least Squares - Wikipedia Method):\n";
+    runTest(testParams, ordinaryLeastSquaresWikipedia);
+
+    std::cout << "\nTest 1.2 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
+
+    testParams.rangeOutlierRatio = 0.1;
+    std::cout << std::format("\n\nTest Set 2 -- Std Dev: {:.2f}m, Outliers: {:.1f}%\n", 
+        testParams.rangeNoiseStdDev, 
+        testParams.rangeOutlierRatio * 100.0
+    );
+
+    // With 10% outliers
+    std::cout << "\nTest 2.1 (Ordinary Least Squares - Wikipedia Method):\n";
+    runTest(testParams, ordinaryLeastSquaresWikipedia);
+
+    std::cout << "\nTest 2.2 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
 
     std::cout << "\nAll tests completed.\n";
 }
@@ -34,7 +51,7 @@ void runTest(
     for (size_t i = 0; i < params.numRuns; i++)
     {
         std::vector<double> noisyRanges = 
-        generateNoisyRanges(params.truePosition, params.anchorPositions, params.rangeNoiseStdDev, rng);
+        generateNoisyRanges(params, rng);
 
         estimatedPositions.emplace_back(
             multilaterationMethod(params.anchorPositions, noisyRanges)
