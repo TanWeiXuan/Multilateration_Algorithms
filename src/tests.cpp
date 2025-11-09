@@ -22,6 +22,12 @@ void runTests(const TestParameters& params)
     std::cout << "\nTest 1.2 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
 
+    std::cout << "\nTest 1.3 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    auto robustNllsEigenLM = std::bind(robustNonLinearLeastSquaresEigenLevenbergMarquardt,
+            std::placeholders::_1, std::placeholders::_2, testParams.rangeNoiseStdDev, 5.0
+        );
+    runTest(testParams, robustNllsEigenLM);
+
     testParams.rangeOutlierRatio = 0.1;
     std::cout << std::format("\n\nTest Set 2 -- Std Dev: {:.2f}m, Outliers: {:.1f}%\n", 
         testParams.rangeNoiseStdDev, 
@@ -34,6 +40,9 @@ void runTests(const TestParameters& params)
 
     std::cout << "\nTest 2.2 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
+
+    std::cout << "\nTest 2.3 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    runTest(testParams, robustNllsEigenLM);
 
     std::cout << "\nAll tests completed.\n";
 }

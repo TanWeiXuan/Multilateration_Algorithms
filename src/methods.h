@@ -27,4 +27,18 @@ Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
     const std::vector<double>& ranges
 );
 
+/**
+ * @brief Robust method using Eigen's Levenberg-Marquardt implementation to solve the non-linear least squares problem
+ * with robust loss functions
+ * @param anchorPositions 
+ * @param ranges 
+ * @return Eigen::Vector3d Estimated position
+ */
+Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges,
+    const double rangeStdDev,
+    const double robustLossParam
+);
+
 // END OF FILE //
