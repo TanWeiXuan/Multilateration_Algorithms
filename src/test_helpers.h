@@ -43,6 +43,11 @@ std::vector<double> generateNoisyRanges(
     std::mt19937_64& rng
 );
 
+std::vector<double> generateNoisyRanges(
+    const TestParameters& params, 
+    std::mt19937_64& rng
+);
+
 void printTestParams(const TestParameters& params);
 
 void computeAndPrintResults(

@@ -83,6 +83,21 @@ std::vector<double> generateNoisyRanges(
     return ranges;
 }
 
+std::vector<double> generateNoisyRanges(
+    const TestParameters& params, 
+    std::mt19937_64& rng
+)
+{
+    return generateNoisyRanges(
+        params.truePosition,
+        params.anchorPositions,
+        params.rangeNoiseStdDev,
+        params.rangeOutlierRatio,
+        params.rangeOutlierMagnitude,
+        rng
+    );
+}
+
 void printTestParams(const TestParameters& params)
 {
     std::cout << "Test Parameters:\n";
