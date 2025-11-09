@@ -182,10 +182,38 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
             {
                 double modeledRange = (x - mAnchorPositions[i]).norm();
                 // Whitened residual
-                double residual = (modeledRange - mRanges[i]) / mRangeStdDev;
-                // Cauchy loss
-                double error = sq(mRobustLossParam) * std::log1p(sq(residual) / sq(mRobustLossParam));
-                fvec(i) = error;
+                double whitenedResidual = std::abs(modeledRange - mRanges[i]) / mRangeStdDev;
+                fvec(i) = whitenedResidual;
+            }
+            return 0;
+        }
+
+        int df(const Eigen::VectorXd& x, Eigen::MatrixXd& J) const
+        {
+            const size_t N = mRanges.size();
+            J.resize(N, 3);
+
+            for(size_t i = 0; i < N; ++i)
+            {
+                double modeledRange = (x - mAnchorPositions[i]).norm();
+
+                if (modeledRange < 1e-8) {
+                    J.row(i).setZero();
+                    continue;
+                }
+
+                double residual = modeledRange - mRanges[i];
+                double whitened_residual = residual / mRangeStdDev;
+                double u = sq(whitened_residual);
+
+                // Cauchy weight: w = 1 / (1 + (r/c)^2)
+                double c = mRobustLossParam;
+                double weight = 1.0 / (1.0 + u / (c * c));
+                double sqrtWeight = std::sqrt(weight);
+
+                Eigen::Vector3d drdx = (1.0 / mRangeStdDev) * (x - mAnchorPositions[i]) / modeledRange;
+                J.row(i) = drdx;
+                J.row(i) *= sqrtWeight;
             }
             return 0;
         }
@@ -195,8 +223,7 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
     Eigen::VectorXd posEstimate = ordinaryLeastSquaresWikipedia(anchorPositions, ranges);
 
     RobustMultilaterationFunctor functor(anchorPositions, ranges, rangeStdDev, robustLossParam);
-    Eigen::NumericalDiff<RobustMultilaterationFunctor> numDiff(functor);
-    Eigen::LevenbergMarquardt<Eigen::NumericalDiff<RobustMultilaterationFunctor>, double> lmSolver(numDiff);
+    Eigen::LevenbergMarquardt<RobustMultilaterationFunctor, double> lmSolver(functor);
     lmSolver.parameters.maxfev = 10'000;
 
     lmSolver.minimize(posEstimate);
