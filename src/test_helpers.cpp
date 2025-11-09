@@ -57,6 +57,8 @@ void printTestParams(const TestParameters& params)
     }
 
     std::cout << std::format("  Range Noise Std Dev: {:.2f}\n", params.rangeNoiseStdDev);
+    std::cout << std::format("  Range Outlier Ratio: {:.2f}\n", params.rangeOutlierRatio);
+    std::cout << std::format("  Range Outlier Magnitude: {:.2f}\n", params.rangeOutlierMagnitude);
 
     if(params.randomSeed.has_value())
     {

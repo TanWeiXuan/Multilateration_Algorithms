@@ -17,6 +17,12 @@ struct TestParameters {
     // Standard deviation of the range noise
     double rangeNoiseStdDev = 0.0;
 
+    // Ratio of outlier ranges
+    double rangeOutlierRatio = 0.0;
+
+    // Outlier ranges are simulated using a uniform distribution of values between [0, rangeOutlierMagnitude]
+    double rangeOutlierMagnitude = 0.0;
+
     // Random seed for noise and outliers
     std::optional<uint64_t> randomSeed = std::nullopt;
 
