@@ -19,6 +19,28 @@ double generateNoisyRange(
     return (truePosition - anchorPosition).norm() + noiseDist(rng);
 }
 
+double generateNoisyRange(
+    const Eigen::Vector3d& truePosition,
+    const Eigen::Vector3d& anchorPosition,
+    double rangeNoiseStdDev,
+    double rangeOutlierRatio,
+    double rangeOutlierMagnitude,
+    std::mt19937_64& rng
+)
+{
+    std::uniform_real_distribution<double> outlierDist(0.0, 1.0);
+    std::uniform_real_distribution<double> noiseDist(0.0, rangeOutlierMagnitude);
+
+    if (outlierDist(rng) < rangeOutlierRatio)
+    {
+        return noiseDist(rng);
+    }
+    else
+    {
+        return generateNoisyRange(truePosition, anchorPosition, rangeNoiseStdDev, rng);
+    }
+}
+
 std::vector<double> generateNoisyRanges(
     const Eigen::Vector3d& truePosition,
     const std::vector<Eigen::Vector3d>& anchorPositions,
@@ -33,6 +55,28 @@ std::vector<double> generateNoisyRanges(
     {
         ranges.emplace_back(
             generateNoisyRange(truePosition, anchorPos, rangeNoiseStdDev, rng)
+        );
+    }
+
+    return ranges;
+}
+
+std::vector<double> generateNoisyRanges(
+    const Eigen::Vector3d& truePosition,
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    double rangeNoiseStdDev,
+    double rangeOutlierRatio,
+    double rangeOutlierMagnitude,
+    std::mt19937_64& rng
+)
+{
+    std::vector<double> ranges;
+    ranges.reserve(anchorPositions.size());
+
+    for(const Eigen::Vector3d& anchorPos : anchorPositions)
+    {
+        ranges.emplace_back(
+            generateNoisyRange(truePosition, anchorPos, rangeNoiseStdDev, rangeOutlierRatio, rangeOutlierMagnitude, rng)
         );
     }
 

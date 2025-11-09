@@ -18,10 +18,28 @@ double generateNoisyRange(
     std::mt19937_64& rng
 );
 
+double generateNoisyRange(
+    const Eigen::Vector3d& truePosition,
+    const Eigen::Vector3d& anchorPosition,
+    double rangeNoiseStdDev,
+    double rangeOutlierRatio,
+    double rangeOutlierMagnitude,
+    std::mt19937_64& rng
+);
+
 std::vector<double> generateNoisyRanges(
     const Eigen::Vector3d& truePosition,
     const std::vector<Eigen::Vector3d>& anchorPositions,
     double rangeNoiseStdDev,
+    std::mt19937_64& rng
+);
+
+std::vector<double> generateNoisyRanges(
+    const Eigen::Vector3d& truePosition,
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    double rangeNoiseStdDev,
+    double rangeOutlierRatio,
+    double rangeOutlierMagnitude,
     std::mt19937_64& rng
 );
 
