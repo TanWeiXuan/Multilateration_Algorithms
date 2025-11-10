@@ -3,6 +3,9 @@ name: Build and Run C++
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-and-run:
     runs-on: ubuntu-latest
