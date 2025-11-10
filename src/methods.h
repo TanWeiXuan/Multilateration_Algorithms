@@ -12,7 +12,7 @@
  * @return Eigen::Vector3d Estimated position
  */
 Eigen::Vector3d ordinaryLeastSquaresWikipedia(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& anchorPositions,
     const std::vector<double>& ranges
 );
 
@@ -23,7 +23,7 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
  * @return Eigen::Vector3d Estimated position
  */
 Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& anchorPositions,
     const std::vector<double>& ranges
 );
 
@@ -35,7 +35,7 @@ Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
  * @return Eigen::Vector3d Estimated position
  */
 Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& anchorPositions,
     const std::vector<double>& ranges,
     const double rangeStdDev,
     const double robustLossParam

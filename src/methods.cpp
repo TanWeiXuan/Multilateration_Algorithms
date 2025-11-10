@@ -14,9 +14,9 @@ namespace // anonymous namespace for helper functions
         return x * x;
     }
 
-    template<typename VecType, typename RetType = VecType>
+    template<typename VecType, typename Allocator, typename RetType = VecType>
     RetType sumOver(
-        const std::vector<VecType>& vec, 
+        const std::vector<VecType, Allocator>& vec, 
         const std::function<RetType(const VecType&)>& fn = [](const VecType& x){ return x; }
     )
     {
@@ -65,7 +65,7 @@ namespace // anonymous namespace for helper functions
 
 
 Eigen::Vector3d ordinaryLeastSquaresWikipedia(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& anchorPositions,
     const std::vector<double>& ranges
 )
 {
@@ -101,17 +101,17 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
 }
 
 Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& anchorPositions,
     const std::vector<double>& ranges
 )
 {
     struct MultilaterationFunctor : EigenLmFunctor<double>
     {
-        const std::vector<Eigen::Vector3d>& mAnchorPositions;
+        const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& mAnchorPositions;
         const std::vector<double>& mRanges;
 
         MultilaterationFunctor(
-            const std::vector<Eigen::Vector3d>& anchorPositions,
+            const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& anchorPositions,
             const std::vector<double>& ranges
         )
         : EigenLmFunctor<double>(3, static_cast<int>(ranges.size())),
@@ -147,7 +147,7 @@ Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
 }
 
 Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& anchorPositions,
     const std::vector<double>& ranges,
     const double rangeStdDev,
     const double robustLossParam
@@ -155,13 +155,13 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
 {
     struct RobustMultilaterationFunctor : EigenLmFunctor<double>
     {
-        const std::vector<Eigen::Vector3d>& mAnchorPositions;
+        const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& mAnchorPositions;
         const std::vector<double>& mRanges;
         const double mRobustLossParam;
         const double mRangeStdDev;
 
         RobustMultilaterationFunctor(
-            const std::vector<Eigen::Vector3d>& anchorPositions,
+            const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& anchorPositions,
             const std::vector<double>& ranges,
             const double rangeStdDev,
             const double robustLossParam

@@ -43,7 +43,7 @@ double generateNoisyRange(
 
 std::vector<double> generateNoisyRanges(
     const Eigen::Vector3d& truePosition,
-    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& anchorPositions,
     double rangeNoiseStdDev,
     std::mt19937_64& rng
 )
@@ -63,7 +63,7 @@ std::vector<double> generateNoisyRanges(
 
 std::vector<double> generateNoisyRanges(
     const Eigen::Vector3d& truePosition,
-    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& anchorPositions,
     double rangeNoiseStdDev,
     double rangeOutlierRatio,
     double rangeOutlierMagnitude,
@@ -132,7 +132,7 @@ void printTestParams(const TestParameters& params)
 }
 
 void computeAndPrintResults(
-    const std::vector<Eigen::Vector3d>& estimatedPositions,
+    const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>& estimatedPositions,
     const TestParameters& params
 )
 {

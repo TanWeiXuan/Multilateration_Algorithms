@@ -54,7 +54,7 @@ void runTest(
 {
     std::mt19937_64 rng = makeRandomEngine(params.randomSeed);
 
-    std::vector<Eigen::Vector3d> estimatedPositions;
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> estimatedPositions;
     estimatedPositions.reserve(params.numRuns);
 
     for (size_t i = 0; i < params.numRuns; i++)

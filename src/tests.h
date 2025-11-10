@@ -12,7 +12,7 @@ struct TestParameters {
     Eigen::Vector3d truePosition = Eigen::Vector3d::Zero();
 
     // Positions of the anchors
-    std::vector<Eigen::Vector3d> anchorPositions = {};
+    std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> anchorPositions = {};
 
     // Standard deviation of the range noise
     double rangeNoiseStdDev = 0.0;
@@ -30,7 +30,7 @@ struct TestParameters {
     size_t numRuns = 1;
 };
 
-typedef std::function< Eigen::Vector3d(const std::vector<Eigen::Vector3d>&, const std::vector<double>&) > MultilaterationFunction;
+typedef std::function< Eigen::Vector3d(const std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>>&, const std::vector<double>&) > MultilaterationFunction;
 
 void runTests(const TestParameters& params);
 
