@@ -182,7 +182,7 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
             {
                 double modeledRange = (x - mAnchorPositions[i]).norm();
                 // Whitened residual
-                double whitenedResidual = std::abs(modeledRange - mRanges[i]) / mRangeStdDev;
+                double whitenedResidual = (modeledRange - mRanges[i]) / mRangeStdDev;
                 fvec(i) = whitenedResidual;
             }
             return 0;
