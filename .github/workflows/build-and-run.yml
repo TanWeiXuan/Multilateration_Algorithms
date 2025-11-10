@@ -1,0 +1,36 @@
+name: Build and Run C++
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up C++ environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++
+        
+    - name: Configure CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake ..
+        
+    - name: Build
+      run: |
+        cd build
+        cmake --build .
+        
+    - name: Run executable
+      run: |
+        cd build
+        ./bin/main
