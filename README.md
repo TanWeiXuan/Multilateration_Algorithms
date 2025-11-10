@@ -45,10 +45,4 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
 );
 ```
 
-**Parameters:**
-- `anchorPositions`: Position of anchors (known reference points)
-- `ranges`: Measured distances from the unknown point to each anchor
-- `rangeStdDev`: Standard deviation of range measurements (for robust method)
-- `robustLossParam`: Parameter controlling the robust loss function (for robust method)
-
 
