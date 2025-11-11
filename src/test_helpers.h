@@ -48,6 +48,18 @@ std::vector<double> generateNoisyRanges(
     std::mt19937_64& rng
 );
 
+Eigen::Vector3d generateNoisyAnchorPosition(
+    const Eigen::Vector3d& trueAnchorPosition,
+    double anchorPosNoiseStdDev,
+    std::mt19937_64& rng
+);
+
+std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
+    const std::vector<Eigen::Vector3d>& trueAnchorPositions,
+    double anchorPosNoiseStdDev,
+    std::mt19937_64& rng
+);
+
 void printTestParams(const TestParameters& params);
 
 void computeAndPrintResults(
