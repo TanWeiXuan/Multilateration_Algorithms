@@ -99,6 +99,44 @@ std::vector<double> generateNoisyRanges(
     );
 }
 
+Eigen::Vector3d generateNoisyAnchorPosition(
+    const Eigen::Vector3d& trueAnchorPosition,
+    double anchorPosNoiseStdDev,
+    std::mt19937_64& rng
+)
+{
+    // Generate noise from multivariate normal distribution with diagonal covariance matrix
+    // where diagonal elements equal anchorPosNoiseStdDev^2
+    std::normal_distribution<double> noiseDist(0.0, anchorPosNoiseStdDev);
+    
+    Eigen::Vector3d noise(
+        noiseDist(rng),
+        noiseDist(rng),
+        noiseDist(rng)
+    );
+    
+    return trueAnchorPosition + noise;
+}
+
+std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
+    const std::vector<Eigen::Vector3d>& trueAnchorPositions,
+    double anchorPosNoiseStdDev,
+    std::mt19937_64& rng
+)
+{
+    std::vector<Eigen::Vector3d> noisyPositions;
+    noisyPositions.reserve(trueAnchorPositions.size());
+    
+    for(const Eigen::Vector3d& truePos : trueAnchorPositions)
+    {
+        noisyPositions.emplace_back(
+            generateNoisyAnchorPosition(truePos, anchorPosNoiseStdDev, rng)
+        );
+    }
+    
+    return noisyPositions;
+}
+
 void printTestParams(const TestParameters& params)
 {
     std::cout << "Test Parameters:\n";
