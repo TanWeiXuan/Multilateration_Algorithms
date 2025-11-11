@@ -146,9 +146,7 @@ void computeAndPrintResults(
         err += diff.cwiseAbs();
         
         // Track maximum error in each axis
-        maxErr.x() = std::max(maxErr.x(), std::abs(diff.x()));
-        maxErr.y() = std::max(maxErr.y(), std::abs(diff.y()));
-        maxErr.z() = std::max(maxErr.z(), std::abs(diff.z()));
+        maxErr = maxErr.cwiseMax(diff.cwiseAbs());
     }
     err /= static_cast<double>(estimatedPositions.size());
 
