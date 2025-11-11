@@ -34,7 +34,7 @@ double generateNoisyRange(
 
     if (outlierDist(rng) < rangeOutlierRatio)
     {
-        return noiseDist(rng);
+        return generateNoisyRange(truePosition, anchorPosition, rangeNoiseStdDev, rng) + noiseDist(rng);
     }
     else
     {
