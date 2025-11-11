@@ -19,10 +19,13 @@ void runTests(const TestParameters& params)
     std::cout << "\nTest 1.1 (Ordinary Least Squares - Wikipedia Method):\n";
     runTest(testParams, ordinaryLeastSquaresWikipedia);
 
-    std::cout << "\nTest 1.2 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    std::cout << "\nTest 1.2 (Ordinary Least Squares - Wikipedia Method with BDCSVD):\n";
+    runTest(testParams, ordinaryWikipediaLeastSquares2);
+
+    std::cout << "\nTest 1.3 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
 
-    std::cout << "\nTest 1.3 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    std::cout << "\nTest 1.4 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     auto robustNllsEigenLM = std::bind(robustNonLinearLeastSquaresEigenLevenbergMarquardt,
             std::placeholders::_1, std::placeholders::_2, testParams.rangeNoiseStdDev, 5.0
         );
@@ -38,10 +41,13 @@ void runTests(const TestParameters& params)
     std::cout << "\nTest 2.1 (Ordinary Least Squares - Wikipedia Method):\n";
     runTest(testParams, ordinaryLeastSquaresWikipedia);
 
-    std::cout << "\nTest 2.2 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    std::cout << "\nTest 2.2 (Ordinary Least Squares - Wikipedia Method with BDCSVD):\n";
+    runTest(testParams, ordinaryWikipediaLeastSquares2);
+
+    std::cout << "\nTest 2.3 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
 
-    std::cout << "\nTest 2.3 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    std::cout << "\nTest 2.4 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     runTest(testParams, robustNllsEigenLM);
 
     std::cout << "\nAll tests completed.\n";
