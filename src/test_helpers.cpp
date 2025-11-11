@@ -30,11 +30,11 @@ double generateNoisyRange(
 )
 {
     std::uniform_real_distribution<double> outlierDist(0.0, 1.0);
-    std::uniform_real_distribution<double> noiseDist(0.0, rangeOutlierMagnitude);
+    std::uniform_real_distribution<double> outlierNoiseDist(0.0, rangeOutlierMagnitude);
 
     if (outlierDist(rng) < rangeOutlierRatio)
     {
-        return generateNoisyRange(truePosition, anchorPosition, rangeNoiseStdDev, rng) + noiseDist(rng);
+        return generateNoisyRange(truePosition, anchorPosition, rangeNoiseStdDev, rng) + outlierNoiseDist(rng);
     }
     else
     {
