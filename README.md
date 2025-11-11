@@ -21,7 +21,20 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
 );
 ```
 
-### 2. nonLinearLeastSquaresEigenLevenbergMarquardt
+### 2. ordinaryWikipediaLeastSquares2
+Uses ordinary least squares to solve the linearised multilateration problem with Eigen's BDCSVD (Bidiagonal Divide and Conquer Singular Value Decomposition). This method is based on the same approach as `ordinaryLeastSquaresWikipedia` but uses a more numerically stable solver.
+
+**Note:** This method works even if anchors are coplanar, making it more robust than the first method.
+
+**Signature:**
+```cpp
+Eigen::Vector3d ordinaryWikipediaLeastSquares2(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges
+);
+```
+
+### 3. nonLinearLeastSquaresEigenLevenbergMarquardt
 Uses Eigen's Levenberg-Marquardt implementation to solve the non-linear least squares problem. This method provides an iterative optimization approach that refines the position estimate by minimizing the residual errors between measured and modeled ranges.
 
 **Signature:**
@@ -32,7 +45,7 @@ Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
 );
 ```
 
-### 3. robustNonLinearLeastSquaresEigenLevenbergMarquardt
+### 4. robustNonLinearLeastSquaresEigenLevenbergMarquardt
 A robust version of the non-linear least squares method that uses Eigen's Levenberg-Marquardt implementation with robust loss functions. This method is more resilient to outliers in the range measurements by applying Cauchy weighting to reduce the influence of erroneous data points.
 
 **Signature:**
