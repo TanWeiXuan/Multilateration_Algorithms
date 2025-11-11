@@ -1,5 +1,6 @@
 #include "test_helpers.h"
 
+#include <algorithm>
 #include <iostream>
 #include <format>
 
@@ -137,10 +138,17 @@ void computeAndPrintResults(
 )
 {
     Eigen::Vector3d err = Eigen::Vector3d::Zero();
+    Eigen::Vector3d maxErr = Eigen::Vector3d::Zero();
+    
     for(const Eigen::Vector3d& estPos : estimatedPositions)
     {
         Eigen::Vector3d diff = estPos - params.truePosition;
         err += diff.cwiseAbs();
+        
+        // Track maximum error in each axis
+        maxErr.x() = std::max(maxErr.x(), std::abs(diff.x()));
+        maxErr.y() = std::max(maxErr.y(), std::abs(diff.y()));
+        maxErr.z() = std::max(maxErr.z(), std::abs(diff.z()));
     }
     err /= static_cast<double>(estimatedPositions.size());
 
@@ -153,6 +161,7 @@ void computeAndPrintResults(
 
     std::cout << "Results:\n";
     std::cout << std::format("  Mean Error: [{:.2f}, {:.2f}, {:.2f}] (m)\n", err.x(), err.y(), err.z());
+    std::cout << std::format("  Max Error: [{:.2f}, {:.2f}, {:.2f}] (m)\n", maxErr.x(), maxErr.y(), maxErr.z());
     std::cout << "  Error Covariance Matrix (m^2):\n";
     std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", errCov(0,0), errCov(0,1), errCov(0,2));
     std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", errCov(1,0), errCov(1,1), errCov(1,2));
