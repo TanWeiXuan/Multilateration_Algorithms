@@ -1,1 +1,0 @@
-/home/runner/work/Multilateration_Algorithms/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/main.dir/link.d CMakeFiles/main.dir/main.cpp.o CMakeFiles/main.dir/methods.cpp.o CMakeFiles/main.dir/tests.cpp.o CMakeFiles/main.dir/test_helpers.cpp.o -o ../bin/main
