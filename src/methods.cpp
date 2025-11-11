@@ -100,6 +100,40 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
     return posEstimate;
 }
 
+Eigen::Vector3d ordinaryWikipediaLeastSquares2(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges
+)
+{
+    const size_t N = ranges.size();
+    const double N_inv = 1.0 / static_cast<double>(N);
+
+    Eigen::MatrixXd A(N, 3);
+    Eigen::VectorXd b(N);
+
+    double meanSquaredRange = N_inv * sumOver(ranges, std::function(sq<double>));
+
+    std::function squaredNorm = [](const Eigen::Vector3d& v) { return v.squaredNorm(); };
+    double meanSquaredNormAnchorPos = N_inv * sumOver(anchorPositions, squaredNorm);
+
+    Eigen::Vector3d anchorPosCentroid = N_inv * sumOver(anchorPositions);
+
+    for(size_t i = 0; i < N; ++i)
+    {
+        Eigen::Vector3d p_i = anchorPositions[i];
+        double d_i = ranges[i];
+
+        A.row(i) = 2.0 * (anchorPosCentroid - p_i).transpose();
+        b(i) = sq(d_i) - meanSquaredRange - p_i.squaredNorm() + meanSquaredNormAnchorPos;
+    }
+
+    // Solve using BDCSVD for better numerical stability, especially when anchors are coplanar
+    Eigen::BDCSVD<Eigen::MatrixXd, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(A);
+    Eigen::Vector3d posEstimate = svd.solve(b);
+
+    return posEstimate;
+}
+
 Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
     const std::vector<Eigen::Vector3d>& anchorPositions,
     const std::vector<double>& ranges
