@@ -28,6 +28,56 @@ namespace // anonymous namespace for helper functions
         return sum;
     }
 
+    /**
+     * @brief Compute the rank of a set of 3D points using SVD
+     * @param points Vector of 3D points
+     * @param tol Tolerance for determining if a singular value is effectively zero
+     * @return size_t Rank of the point set (0-3)
+     *         0: empty/single point
+     *         1: collinear points
+     *         2: coplanar points
+     *         3: general 3D configuration
+     */
+    size_t computeRank(const std::vector<Eigen::Vector3d>& points, double tol = 1e-8)
+    {
+        const size_t N = points.size();
+        
+        // Edge cases
+        if (N == 0) {
+            return 0;
+        }
+        if (N == 1) {
+            return 0;
+        }
+        
+        // Compute centroid
+        Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
+        for (const auto& p : points) {
+            centroid += p;
+        }
+        centroid /= static_cast<double>(N);
+        
+        // Build matrix of centered points (each row is a point - centroid)
+        Eigen::MatrixXd A(N, 3);
+        for (size_t i = 0; i < N; ++i) {
+            A.row(i) = (points[i] - centroid).transpose();
+        }
+        
+        // Compute SVD
+        Eigen::BDCSVD<Eigen::MatrixXd, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(A);
+        const Eigen::VectorXd& singularValues = svd.singularValues();
+        
+        // Count singular values above tolerance
+        size_t rank = 0;
+        for (Eigen::Index i = 0; i < singularValues.size(); ++i) {
+            if (singularValues(i) > tol) {
+                rank++;
+            }
+        }
+        
+        return rank;
+    }
+
     // Generic functor for Eigen's Levenberg-Marquardt Solver, copied from Eigen's tests
     template <typename Scalar_, int NX = Eigen::Dynamic, int NY = Eigen::Dynamic>
     struct EigenLmFunctor {
