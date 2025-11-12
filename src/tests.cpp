@@ -2,6 +2,7 @@
 #include "test_helpers.h"
 #include "methods.h"
 
+#include <chrono>
 #include <iostream>
 #include <format>
 
@@ -63,17 +64,22 @@ void runTest(
     std::vector<Eigen::Vector3d> estimatedPositions;
     estimatedPositions.reserve(params.numRuns);
 
+    auto t0 = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < params.numRuns; i++)
     {
-        std::vector<double> noisyRanges = 
-        generateNoisyRanges(params, rng);
+        std::vector<double> noisyRanges = generateNoisyRanges(params, rng);
 
         estimatedPositions.emplace_back(
             multilaterationMethod(params.anchorPositions, noisyRanges)
         );
     }
+    auto t1 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = t1 - t0;
 
     computeAndPrintResults(estimatedPositions, params);
+
+    std::cout << std::format("  Total Time for {} runs: {:.3f} ms\n", params.numRuns, elapsed.count());
+    std::cout << std::format("  Average Time per run: {:.4f} ms\n", (elapsed.count() * 1000.0) / static_cast<double>(params.numRuns));
 }
 
 // END OF FILE //
