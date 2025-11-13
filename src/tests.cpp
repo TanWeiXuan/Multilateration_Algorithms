@@ -32,13 +32,14 @@ void runTests(const TestParameters& params)
         );
     runTest(testParams, robustNllsEigenLM);
 
-    testParams.rangeOutlierRatio = 0.1;
-    std::cout << std::format("\n\nTest Set 2 -- Std Dev: {:.2f}m, Outliers: {:.1f}%\n", 
+    // Test Set 2: No ranging outliers, but anchor position noise
+    testParams.rangeOutlierRatio = 0.0;
+    testParams.anchorPosNoiseStdDev = 0.25;
+    std::cout << std::format("\n\nTest Set 2 -- Range Std Dev: {:.2f}m, Anchor Position Std Dev: {:.2f}m, No Outliers\n", 
         testParams.rangeNoiseStdDev, 
-        testParams.rangeOutlierRatio * 100.0
+        testParams.anchorPosNoiseStdDev
     );
 
-    // With 10% outliers
     std::cout << "\nTest 2.1 (Ordinary Least Squares - Wikipedia Method):\n";
     runTest(testParams, ordinaryLeastSquaresWikipedia);
 
@@ -49,6 +50,27 @@ void runTests(const TestParameters& params)
     runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
 
     std::cout << "\nTest 2.4 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    runTest(testParams, robustNllsEigenLM);
+
+    // Test Set 3: With ranging outliers
+    testParams.rangeOutlierRatio = 0.1;
+    testParams.anchorPosNoiseStdDev = 0.0;
+    std::cout << std::format("\n\nTest Set 3 -- Std Dev: {:.2f}m, Outliers: {:.1f}%\n", 
+        testParams.rangeNoiseStdDev, 
+        testParams.rangeOutlierRatio * 100.0
+    );
+
+    // With 10% outliers
+    std::cout << "\nTest 3.1 (Ordinary Least Squares - Wikipedia Method):\n";
+    runTest(testParams, ordinaryLeastSquaresWikipedia);
+
+    std::cout << "\nTest 3.2 (Ordinary Least Squares - Wikipedia Method with BDCSVD):\n";
+    runTest(testParams, ordinaryLeastSquaresWikipedia2);
+
+    std::cout << "\nTest 3.3 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
+    runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
+
+    std::cout << "\nTest 3.4 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     runTest(testParams, robustNllsEigenLM);
 
     std::cout << "\nAll tests completed.\n";
@@ -67,10 +89,17 @@ void runTest(
     auto t0 = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < params.numRuns; i++)
     {
+        // Generate noisy anchor positions if anchor position noise is specified
+        std::vector<Eigen::Vector3d> anchorPositions = params.anchorPositions;
+        if (params.anchorPosNoiseStdDev > 0.0)
+        {
+            anchorPositions = generateNoisyAnchorPositions(params.anchorPositions, params.anchorPosNoiseStdDev, rng);
+        }
+
         std::vector<double> noisyRanges = generateNoisyRanges(params, rng);
 
         estimatedPositions.emplace_back(
-            multilaterationMethod(params.anchorPositions, noisyRanges)
+            multilaterationMethod(anchorPositions, noisyRanges)
         );
     }
     auto t1 = std::chrono::high_resolution_clock::now();

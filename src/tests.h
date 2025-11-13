@@ -23,6 +23,9 @@ struct TestParameters {
     // Outlier ranges are simulated using a uniform distribution of values between [0, rangeOutlierMagnitude]
     double rangeOutlierMagnitude = 0.0;
 
+    // Standard deviation of the anchor position noise
+    double anchorPosNoiseStdDev = 0.0;
+
     // Random seed for noise and outliers
     std::optional<uint64_t> randomSeed = std::nullopt;
 
