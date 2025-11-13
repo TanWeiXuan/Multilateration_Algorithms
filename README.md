@@ -46,7 +46,13 @@ Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
 ```
 
 ### 4. robustNonLinearLeastSquaresEigenLevenbergMarquardt
-A robust version of the non-linear least squares method that uses Eigen's Levenberg-Marquardt implementation with robust loss functions. This method is more resilient to outliers in the range measurements by applying Cauchy weighting to reduce the influence of erroneous data points.
+A robust version of the non-linear least squares method that uses Eigen's Levenberg-Marquardt implementation with robust loss functions using an iteratively reweighted least squares (IRLS) approach. This method is more resilient to outliers in the range measurements by applying Cauchy weighting to reduce the influence of erroneous data points.
+
+**Parameters:**
+- `anchorPositions`: Position of anchors
+- `ranges`: Measured ranges from the point to each anchor
+- `rangeStdDev`: Standard deviation of range measurements
+- `robustLossParam`: Parameter for the Cauchy loss function (controls the robustness threshold)
 
 **Signature:**
 ```cpp
