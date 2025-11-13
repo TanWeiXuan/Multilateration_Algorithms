@@ -41,7 +41,7 @@ Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
 
 /**
  * @brief Robust method using Eigen's Levenberg-Marquardt implementation to solve the non-linear least squares problem
- * with robust loss functions
+ * with robust loss functions using an iteteratively reweighted least squares approach
  * @param anchorPositions 
  * @param ranges 
  * @return Eigen::Vector3d Estimated position
