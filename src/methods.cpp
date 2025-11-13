@@ -255,7 +255,7 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
                 double modeledRange = (x - mAnchorPositions[i]).norm();
                 // Whitened residual
                 double whitenedResidual = (modeledRange - mRanges[i]) / mRangeStdDev;
-                double u = sq(whitened_residual);
+                double u = sq(whitenedResidual);
 
                 // Cauchy weight: w = 1 / (1 + (r/c)^2)
                 double c = mRobustLossParam;
