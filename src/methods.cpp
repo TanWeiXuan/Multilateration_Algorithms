@@ -206,7 +206,7 @@ Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
     };
 
     // Initial guess
-    Eigen::VectorXd posEstimate = ordinaryLeastSquaresWikipedia(anchorPositions, ranges);
+    Eigen::VectorXd posEstimate = ordinaryLeastSquaresWikipedia2(anchorPositions, ranges);
 
     MultilaterationFunctor functor(anchorPositions, ranges);
     Eigen::NumericalDiff<MultilaterationFunctor> numDiff(functor);
@@ -292,7 +292,7 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
     };
 
     // Initial guess
-    Eigen::VectorXd posEstimate = ordinaryLeastSquaresWikipedia(anchorPositions, ranges);
+    Eigen::VectorXd posEstimate = ordinaryLeastSquaresWikipedia2(anchorPositions, ranges);
 
     RobustMultilaterationFunctor functor(anchorPositions, ranges, rangeStdDev, robustLossParam);
     Eigen::LevenbergMarquardt<RobustMultilaterationFunctor, double> lmSolver(functor);
