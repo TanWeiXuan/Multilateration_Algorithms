@@ -23,7 +23,7 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
  * @param ranges 
  * @return Eigen::Vector3d Estimated position
  */
-Eigen::Vector3d ordinaryWikipediaLeastSquares2(
+Eigen::Vector3d ordinaryLeastSquaresWikipedia2(
     const std::vector<Eigen::Vector3d>& anchorPositions,
     const std::vector<double>& ranges
 );
