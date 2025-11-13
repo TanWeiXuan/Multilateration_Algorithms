@@ -44,6 +44,8 @@ Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
  * with robust loss functions using an iteteratively reweighted least squares approach
  * @param anchorPositions 
  * @param ranges 
+ * @param rangeStdDev Standard deviation of the range measurements (used for whitening)
+ * @param robustLossParam Parameter for the robust loss function (e.g., for Cauchy loss, this is the scale parameter)
  * @return Eigen::Vector3d Estimated position
  */
 Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
