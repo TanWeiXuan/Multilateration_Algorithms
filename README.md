@@ -21,14 +21,14 @@ Eigen::Vector3d ordinaryLeastSquaresWikipedia(
 );
 ```
 
-### 2. ordinaryWikipediaLeastSquares2
+### 2. ordinaryLeastSquaresWikipedia2
 Uses ordinary least squares to solve the linearised multilateration problem with Eigen's BDCSVD (Bidiagonal Divide and Conquer Singular Value Decomposition). This method is based on the same approach as `ordinaryLeastSquaresWikipedia` but uses a more numerically stable solver.
 
 **Note:** This method works even if anchors are coplanar, making it more robust than the first method.
 
 **Signature:**
 ```cpp
-Eigen::Vector3d ordinaryWikipediaLeastSquares2(
+Eigen::Vector3d ordinaryLeastSquaresWikipedia2(
     const std::vector<Eigen::Vector3d>& anchorPositions,
     const std::vector<double>& ranges
 );

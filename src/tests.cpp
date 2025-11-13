@@ -21,7 +21,7 @@ void runTests(const TestParameters& params)
     runTest(testParams, ordinaryLeastSquaresWikipedia);
 
     std::cout << "\nTest 1.2 (Ordinary Least Squares - Wikipedia Method with BDCSVD):\n";
-    runTest(testParams, ordinaryWikipediaLeastSquares2);
+    runTest(testParams, ordinaryLeastSquaresWikipedia2);
 
     std::cout << "\nTest 1.3 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
@@ -43,7 +43,7 @@ void runTests(const TestParameters& params)
     runTest(testParams, ordinaryLeastSquaresWikipedia);
 
     std::cout << "\nTest 2.2 (Ordinary Least Squares - Wikipedia Method with BDCSVD):\n";
-    runTest(testParams, ordinaryWikipediaLeastSquares2);
+    runTest(testParams, ordinaryLeastSquaresWikipedia2);
 
     std::cout << "\nTest 2.3 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
