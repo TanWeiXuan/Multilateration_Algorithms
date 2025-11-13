@@ -225,80 +225,93 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
     const double robustLossParam
 )
 {
-    struct RobustMultilaterationFunctor : EigenLmFunctor<double>
+    struct WeightedMultilaterationFunctor : EigenLmFunctor<double>
     {
         const std::vector<Eigen::Vector3d>& mAnchorPositions;
         const std::vector<double>& mRanges;
-        const double mRobustLossParam;
+        const std::vector<double>& mSqrtWeights;
         const double mRangeStdDev;
 
-        RobustMultilaterationFunctor(
+        WeightedMultilaterationFunctor(
             const std::vector<Eigen::Vector3d>& anchorPositions,
             const std::vector<double>& ranges,
-            const double rangeStdDev,
-            const double robustLossParam
+            const std::vector<double>& sqrtWeights,
+            const double rangeStdDev
         )
         : EigenLmFunctor<double>(3, static_cast<int>(ranges.size())),
           mAnchorPositions(anchorPositions),
           mRanges(ranges),
-          mRangeStdDev(rangeStdDev),
-          mRobustLossParam(robustLossParam)
+          mSqrtWeights(sqrtWeights),
+          mRangeStdDev(rangeStdDev)
         {
             // empty
         }
 
-        int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const
+    int operator()(const Eigen::VectorXd& x, Eigen::VectorXd& fvec) const
+    {
+        const size_t N = mRanges.size();
+        for (size_t i = 0; i < N; ++i)
         {
-            const size_t N = mRanges.size();
-            for(size_t i = 0; i < N; ++i)
-            {
-                double modeledRange = (x - mAnchorPositions[i]).norm();
-                // Whitened residual
-                double whitenedResidual = (modeledRange - mRanges[i]) / mRangeStdDev;
-                fvec(i) = whitenedResidual;
-            }
-            return 0;
+            double modeledRange = (x - mAnchorPositions[i]).norm();
+            double weightedResidual = (modeledRange - mRanges[i]) / mRangeStdDev;
+            fvec(i) = mSqrtWeights[i] * weightedResidual;
         }
+        return 0;
+    }
 
-        int df(const Eigen::VectorXd& x, Eigen::MatrixXd& J) const
+    int df(const Eigen::VectorXd& x, Eigen::MatrixXd& J) const
+    {
+        const size_t N = mRanges.size();
+        J.resize(N, 3);
+
+        for (size_t i = 0; i < N; ++i)
         {
-            const size_t N = mRanges.size();
-            J.resize(N, 3);
-
-            for(size_t i = 0; i < N; ++i)
-            {
-                double modeledRange = (x - mAnchorPositions[i]).norm();
-
-                if (modeledRange < 1e-8) {
-                    J.row(i).setZero();
-                    continue;
-                }
-
-                double residual = modeledRange - mRanges[i];
-                double whitened_residual = residual / mRangeStdDev;
-                double u = sq(whitened_residual);
-
-                // Cauchy weight: w = 1 / (1 + (r/c)^2)
-                double c = mRobustLossParam;
-                double weight = 1.0 / (1.0 + u / (c * c));
-                double sqrtWeight = std::sqrt(weight);
-
-                Eigen::Vector3d drdx = (1.0 / mRangeStdDev) * (x - mAnchorPositions[i]) / modeledRange;
-                J.row(i) = drdx;
-                J.row(i) *= sqrtWeight;
+            double modeledRange = (x - mAnchorPositions[i]).norm();
+            if (modeledRange < 1e-12) {
+                J.row(i).setZero();
+                continue;
             }
-            return 0;
+            Eigen::Vector3d drdx = (1.0 / mRangeStdDev) * (x - mAnchorPositions[i]) / modeledRange;
+            J.row(i) = mSqrtWeights[i] * drdx.transpose();
         }
+        return 0;
+    }
     };
 
     // Initial guess
     Eigen::VectorXd posEstimate = ordinaryLeastSquaresWikipedia2(anchorPositions, ranges);
 
-    RobustMultilaterationFunctor functor(anchorPositions, ranges, rangeStdDev, robustLossParam);
-    Eigen::LevenbergMarquardt<RobustMultilaterationFunctor, double> lmSolver(functor);
-    lmSolver.parameters.maxfev = 10'000;
+    const size_t N = ranges.size();
+    std::vector<double> sqrtWeights(N, 1.0);
 
-    lmSolver.minimize(posEstimate);
+    const size_t maxOuterIterations = 10;
+
+    double prevFnorm = std::numeric_limits<double>::max();
+    for(size_t iter = 0; iter < maxOuterIterations; ++iter)
+    {
+        WeightedMultilaterationFunctor functor(anchorPositions, ranges, sqrtWeights, rangeStdDev);
+        Eigen::LevenbergMarquardt<WeightedMultilaterationFunctor> lm(functor);
+        lm.parameters.maxfev = 1000;
+        lm.minimize(posEstimate);
+
+        std::vector<double> residuals(N);
+        for (size_t i = 0; i < N; ++i)
+        {
+            // Compute weights using Cauchy loss function for next iteration
+            double modeledRange = (posEstimate - anchorPositions[i]).norm();
+            double whitenedResidual = (modeledRange - ranges[i]) / rangeStdDev;
+            double r = residuals[i] = whitenedResidual;
+            double c = robustLossParam;
+            double w = 1.0 / (1.0 + sq(r / c));
+            sqrtWeights[i] = std::sqrt(std::max(w, 1e-9)); // Clamp weights to avoid numerical issues
+        }
+
+        // Convergence checks
+        if(std::abs(lm.fnorm - prevFnorm) < 1e-6) break; // Absolute change in cost function
+        if(std::abs((lm.fnorm - prevFnorm) / std::max(prevFnorm, 1e-9)) < 1e-6) break; // Relative change in cost function
+
+        prevFnorm = lm.fnorm;
+    }
 
     return posEstimate;
 }
