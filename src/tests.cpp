@@ -32,6 +32,9 @@ void runTests(const TestParameters& params)
         );
     runTest(testParams, robustNllsEigenLM);
 
+    std::cout << "\nTest 1.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
+    runTest(testParams, linearLeastSquaresI_YueWang);
+
     // Test Set 2: No ranging outliers, but anchor position noise
     testParams.rangeOutlierRatio = 0.0;
     testParams.anchorPosNoiseStdDev = 0.25;
@@ -51,6 +54,9 @@ void runTests(const TestParameters& params)
 
     std::cout << "\nTest 2.4 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     runTest(testParams, robustNllsEigenLM);
+
+    std::cout << "\nTest 2.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
+    runTest(testParams, linearLeastSquaresI_YueWang);
 
     // Test Set 3: With ranging outliers
     testParams.rangeOutlierRatio = 0.1;
@@ -72,6 +78,9 @@ void runTests(const TestParameters& params)
 
     std::cout << "\nTest 3.4 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     runTest(testParams, robustNllsEigenLM);
+
+    std::cout << "\nTest 3.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
+    runTest(testParams, linearLeastSquaresI_YueWang);
 
     std::cout << "\nAll tests completed.\n";
 }

@@ -316,4 +316,33 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
     return posEstimate;
 }
 
+Eigen::Vector3d linearLeastSquaresI_YueWang(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges
+)
+{
+    const size_t N = ranges.size();
+    Eigen::MatrixXd A(N, 4);
+    Eigen::VectorXd b(N);
+
+    for(size_t i = 0; i < N; ++i)
+    {
+        Eigen::Vector3d p_i = anchorPositions[i];
+        double d_i = ranges[i];
+
+        A(i, 0) = -2.0 * p_i.x();
+        A(i, 1) = -2.0 * p_i.y();
+        A(i, 2) = -2.0 * p_i.z();
+        A(i, 3) = 1.0;
+
+        b(i) = sq(d_i) - p_i.squaredNorm();
+    }
+
+    // Solve using BDCSVD for better numerical stability, especially when anchors are coplanar
+    Eigen::BDCSVD<Eigen::MatrixXd, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(A);
+    Eigen::VectorXd x = svd.solve(b);
+
+    return x.block<3,1>(0,0);
+}
+
 // END OF FILE //

@@ -41,7 +41,7 @@ Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
 
 /**
  * @brief Robust method using Eigen's Levenberg-Marquardt implementation to solve the non-linear least squares problem
- * with robust loss functions using an iteteratively reweighted least squares approach
+ * with robust loss functions using an iteratively reweighted least squares approach
  * @param anchorPositions 
  * @param ranges 
  * @param rangeStdDev Standard deviation of the range measurements (used for whitening)
@@ -53,6 +53,17 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
     const std::vector<double>& ranges,
     const double rangeStdDev,
     const double robustLossParam
+);
+
+/**
+ * @brief LLS-I method from "Linear least squares localization in sensor networks" by Yue Wang. (2015)
+ * @param anchorPositions 
+ * @param ranges 
+ * @return Eigen::Vector3d Estimated position
+ */
+Eigen::Vector3d linearLeastSquaresI_YueWang(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges
 );
 
 // END OF FILE //
