@@ -137,6 +137,18 @@ std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
     return noisyPositions;
 }
 
+std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
+    const TestParameters& params,
+    std::mt19937_64& rng
+)
+{
+    return generateNoisyAnchorPositions(
+        params.anchorPositions,
+        params.anchorPosNoiseStdDev,
+        rng
+    );
+}
+
 void printTestParams(const TestParameters& params)
 {
     std::cout << "Test Parameters:\n";

@@ -60,6 +60,11 @@ std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
     std::mt19937_64& rng
 );
 
+std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
+    const TestParameters& params,
+    std::mt19937_64& rng
+);
+
 void printTestParams(const TestParameters& params);
 
 TestResults computeResults(
