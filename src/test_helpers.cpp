@@ -197,7 +197,7 @@ TestResults computeResults(
     }
     errCov /= static_cast<double>(estimatedPositions.size());
 
-    results.meanError = err;
+    results.meanAbsError = err;
     results.maxError = maxErr;
     results.errorCovariance = errCov;
 
@@ -207,8 +207,8 @@ TestResults computeResults(
 void printResults(const TestResults& results)
 {
     std::cout << "Results:\n";
-    std::cout << std::format("  Mean Error: [{:.2f}, {:.2f}, {:.2f}] (m)\n", 
-        results.meanError.x(), results.meanError.y(), results.meanError.z());
+    std::cout << std::format("  Mean Absolute Error: [{:.2f}, {:.2f}, {:.2f}] (m)\n", 
+        results.meanAbsError.x(), results.meanAbsError.y(), results.meanAbsError.z());
     std::cout << std::format("  Max Error in Each Axis: [{:.2f}, {:.2f}, {:.2f}] (m)\n", 
         results.maxError.x(), results.maxError.y(), results.maxError.z());
     std::cout << "  Error Covariance Matrix (m^2):\n";

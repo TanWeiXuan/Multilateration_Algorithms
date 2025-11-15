@@ -34,8 +34,8 @@ struct TestParameters {
 };
 
 struct TestResults {
-    // Mean error in each axis
-    Eigen::Vector3d meanError = Eigen::Vector3d::Zero();
+    // Mean absolute error in each axis
+    Eigen::Vector3d meanAbsError = Eigen::Vector3d::Zero();
 
     // Maximum error in each axis
     Eigen::Vector3d maxError = Eigen::Vector3d::Zero();
