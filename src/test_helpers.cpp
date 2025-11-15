@@ -170,11 +170,13 @@ void printTestParams(const TestParameters& params)
     std::cout << std::format("  Number of Runs: {}\n", params.numRuns);
 }
 
-void computeAndPrintResults(
+TestResults computeResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
     const TestParameters& params
 )
 {
+    TestResults results;
+    
     Eigen::Vector3d err = Eigen::Vector3d::Zero();
     Eigen::Vector3d maxErr = Eigen::Vector3d::Zero();
     
@@ -195,13 +197,36 @@ void computeAndPrintResults(
     }
     errCov /= static_cast<double>(estimatedPositions.size());
 
+    results.meanError = err;
+    results.maxError = maxErr;
+    results.errorCovariance = errCov;
+
+    return results;
+}
+
+void printResults(const TestResults& results)
+{
     std::cout << "Results:\n";
-    std::cout << std::format("  Mean Error: [{:.2f}, {:.2f}, {:.2f}] (m)\n", err.x(), err.y(), err.z());
-    std::cout << std::format("  Max Error in Each Axis: [{:.2f}, {:.2f}, {:.2f}] (m)\n", maxErr.x(), maxErr.y(), maxErr.z());
+    std::cout << std::format("  Mean Error: [{:.2f}, {:.2f}, {:.2f}] (m)\n", 
+        results.meanError.x(), results.meanError.y(), results.meanError.z());
+    std::cout << std::format("  Max Error in Each Axis: [{:.2f}, {:.2f}, {:.2f}] (m)\n", 
+        results.maxError.x(), results.maxError.y(), results.maxError.z());
     std::cout << "  Error Covariance Matrix (m^2):\n";
-    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", errCov(0,0), errCov(0,1), errCov(0,2));
-    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", errCov(1,0), errCov(1,1), errCov(1,2));
-    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", errCov(2,0), errCov(2,1), errCov(2,2));
+    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
+        results.errorCovariance(0,0), results.errorCovariance(0,1), results.errorCovariance(0,2));
+    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
+        results.errorCovariance(1,0), results.errorCovariance(1,1), results.errorCovariance(1,2));
+    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
+        results.errorCovariance(2,0), results.errorCovariance(2,1), results.errorCovariance(2,2));
+}
+
+void computeAndPrintResults(
+    const std::vector<Eigen::Vector3d>& estimatedPositions,
+    const TestParameters& params
+)
+{
+    TestResults results = computeResults(estimatedPositions, params);
+    printResults(results);
 }
 
 // END OF FILE //
