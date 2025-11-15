@@ -33,6 +33,17 @@ struct TestParameters {
     size_t numRuns = 1;
 };
 
+struct TestResults {
+    // Mean error in each axis
+    Eigen::Vector3d meanError = Eigen::Vector3d::Zero();
+
+    // Maximum error in each axis
+    Eigen::Vector3d maxError = Eigen::Vector3d::Zero();
+
+    // Error covariance matrix
+    Eigen::Matrix3d errorCovariance = Eigen::Matrix3d::Zero();
+};
+
 typedef std::function< Eigen::Vector3d(const std::vector<Eigen::Vector3d>&, const std::vector<double>&) > MultilaterationFunction;
 
 void runTests(const TestParameters& params);

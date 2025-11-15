@@ -62,6 +62,13 @@ std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
 
 void printTestParams(const TestParameters& params);
 
+TestResults computeResults(
+    const std::vector<Eigen::Vector3d>& estimatedPositions,
+    const TestParameters& params
+);
+
+void printResults(const TestResults& results);
+
 void computeAndPrintResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
     const TestParameters& params
