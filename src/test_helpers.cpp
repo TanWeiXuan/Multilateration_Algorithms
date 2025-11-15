@@ -216,29 +216,51 @@ TestResults computeResults(
     return results;
 }
 
-void printResults(const TestResults& results)
+void printResults(const TestResults& results, const PrintOption& options)
 {
     std::cout << "Results:\n";
-    std::cout << std::format("  Mean Absolute Error: [{:.2f}, {:.2f}, {:.2f}] (m)\n", 
-        results.meanAbsError.x(), results.meanAbsError.y(), results.meanAbsError.z());
-    std::cout << std::format("  Max Error in Each Axis: [{:.2f}, {:.2f}, {:.2f}] (m)\n", 
-        results.maxError.x(), results.maxError.y(), results.maxError.z());
-    std::cout << "  Error Covariance Matrix (m^2):\n";
-    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
-        results.errorCovariance(0,0), results.errorCovariance(0,1), results.errorCovariance(0,2));
-    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
-        results.errorCovariance(1,0), results.errorCovariance(1,1), results.errorCovariance(1,2));
-    std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
-        results.errorCovariance(2,0), results.errorCovariance(2,1), results.errorCovariance(2,2));
+    
+    if (options.printMeanAbsError)
+    {
+        std::cout << std::format("  Mean Absolute Error: [{:.2f}, {:.2f}, {:.2f}] (m)\n", 
+            results.meanAbsError.x(), results.meanAbsError.y(), results.meanAbsError.z());
+    }
+    
+    if (options.printMaxError)
+    {
+        std::cout << std::format("  Max Error in Each Axis: [{:.2f}, {:.2f}, {:.2f}] (m)\n", 
+            results.maxError.x(), results.maxError.y(), results.maxError.z());
+    }
+    
+    if (options.printErrorCovariance)
+    {
+        if (options.printCovarianceDiagonalOnly)
+        {
+            std::cout << "  Error Covariance Diagonal (m^2):\n";
+            std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
+                results.errorCovariance(0,0), results.errorCovariance(1,1), results.errorCovariance(2,2));
+        }
+        else
+        {
+            std::cout << "  Error Covariance Matrix (m^2):\n";
+            std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
+                results.errorCovariance(0,0), results.errorCovariance(0,1), results.errorCovariance(0,2));
+            std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
+                results.errorCovariance(1,0), results.errorCovariance(1,1), results.errorCovariance(1,2));
+            std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
+                results.errorCovariance(2,0), results.errorCovariance(2,1), results.errorCovariance(2,2));
+        }
+    }
 }
 
 void computeAndPrintResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
-    const TestParameters& params
+    const TestParameters& params,
+    const PrintOption& options
 )
 {
     TestResults results = computeResults(estimatedPositions, params);
-    printResults(results);
+    printResults(results, options);
 }
 
 // END OF FILE //

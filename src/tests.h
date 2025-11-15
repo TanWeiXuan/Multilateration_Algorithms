@@ -44,6 +44,20 @@ struct TestResults {
     Eigen::Matrix3d errorCovariance = Eigen::Matrix3d::Zero();
 };
 
+struct PrintOption {
+    // Flag to print mean absolute error
+    bool printMeanAbsError = true;
+
+    // Flag to print maximum error
+    bool printMaxError = true;
+
+    // Flag to print error covariance matrix
+    bool printErrorCovariance = true;
+
+    // Flag to print only diagonal values of covariance matrix (if printErrorCovariance is true)
+    bool printCovarianceDiagonalOnly = false;
+};
+
 typedef std::function< Eigen::Vector3d(const std::vector<Eigen::Vector3d>&, const std::vector<double>&) > MultilaterationFunction;
 
 void runTests(const TestParameters& params);
