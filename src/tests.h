@@ -44,7 +44,7 @@ struct TestResults {
     Eigen::Matrix3d errorCovariance = Eigen::Matrix3d::Zero();
 };
 
-struct PrintOption {
+struct PrintOptions {
     // Flag to print mean absolute error
     bool printMeanAbsError = true;
 

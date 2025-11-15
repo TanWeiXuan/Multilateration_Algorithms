@@ -216,7 +216,7 @@ TestResults computeResults(
     return results;
 }
 
-void printResults(const TestResults& results, const PrintOption& options)
+void printResults(const TestResults& results, const PrintOptions& options)
 {
     std::cout << "Results:\n";
     
@@ -256,7 +256,7 @@ void printResults(const TestResults& results, const PrintOption& options)
 void computeAndPrintResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
     const TestParameters& params,
-    const PrintOption& options
+    const PrintOptions& options
 )
 {
     TestResults results = computeResults(estimatedPositions, params);

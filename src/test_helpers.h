@@ -72,12 +72,12 @@ TestResults computeResults(
     const TestParameters& params
 );
 
-void printResults(const TestResults& results, const PrintOption& options = PrintOption{});
+void printResults(const TestResults& results, const PrintOptions& options = PrintOptions{});
 
 void computeAndPrintResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
     const TestParameters& params,
-    const PrintOption& options = PrintOption{}
+    const PrintOptions& options = PrintOptions{}
 );
 
 // END OF FILE //
