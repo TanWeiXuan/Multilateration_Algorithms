@@ -9,6 +9,7 @@ std::mt19937_64 makeRandomEngine(std::optional<uint64_t> seed)
     return std::mt19937_64(seed.value_or(std::random_device{}()));
 }
 
+
 double generateNoisyRange(
     const Eigen::Vector3d& truePosition,
     const Eigen::Vector3d& anchorPosition,
@@ -19,6 +20,7 @@ double generateNoisyRange(
     std::normal_distribution<double> noiseDist(0.0, rangeNoiseStdDev);
     return (truePosition - anchorPosition).norm() + noiseDist(rng);
 }
+
 
 double generateNoisyRange(
     const Eigen::Vector3d& truePosition,
@@ -42,6 +44,7 @@ double generateNoisyRange(
     }
 }
 
+
 std::vector<double> generateNoisyRanges(
     const Eigen::Vector3d& truePosition,
     const std::vector<Eigen::Vector3d>& anchorPositions,
@@ -61,6 +64,7 @@ std::vector<double> generateNoisyRanges(
 
     return ranges;
 }
+
 
 std::vector<double> generateNoisyRanges(
     const Eigen::Vector3d& truePosition,
@@ -84,6 +88,7 @@ std::vector<double> generateNoisyRanges(
     return ranges;
 }
 
+
 std::vector<double> generateNoisyRanges(
     const TestParameters& params, 
     std::mt19937_64& rng
@@ -98,6 +103,7 @@ std::vector<double> generateNoisyRanges(
         rng
     );
 }
+
 
 Eigen::Vector3d generateNoisyAnchorPosition(
     const Eigen::Vector3d& trueAnchorPosition,
@@ -118,6 +124,7 @@ Eigen::Vector3d generateNoisyAnchorPosition(
     return trueAnchorPosition + noise;
 }
 
+
 std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
     const std::vector<Eigen::Vector3d>& trueAnchorPositions,
     double anchorPosNoiseStdDev,
@@ -137,6 +144,7 @@ std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
     return noisyPositions;
 }
 
+
 std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
     const TestParameters& params,
     std::mt19937_64& rng
@@ -148,6 +156,7 @@ std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
         rng
     );
 }
+
 
 void printTestParams(const TestParameters& params)
 {
@@ -182,6 +191,7 @@ void printTestParams(const TestParameters& params)
     std::cout << std::format("  Number of Runs: {}\n", params.numRuns);
 }
 
+
 TestResults computeResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
     const TestParameters& params
@@ -215,6 +225,7 @@ TestResults computeResults(
 
     return results;
 }
+
 
 void printResults(const TestResults& results, const PrintOptions& options)
 {
@@ -252,6 +263,7 @@ void printResults(const TestResults& results, const PrintOptions& options)
         }
     }
 }
+
 
 void computeAndPrintResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
