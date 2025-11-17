@@ -43,7 +43,7 @@ struct PrintOptions {
     // Print error covariance matrix
     bool printErrorCovariance = true;
     // Print only diagonal values of covariance matrix (if printErrorCovariance is true)
-    bool printCovarianceDiagonalOnly = false;
+    bool printCovarianceDiagonalOnly = true;
 };
 
 typedef std::function< Eigen::Vector3d(const std::vector<Eigen::Vector3d>&, const std::vector<double>&) > MultilaterationFunction;
