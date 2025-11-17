@@ -247,8 +247,7 @@ void printResults(const TestResults& results, const PrintOptions& options)
     {
         if (options.printCovarianceDiagonalOnly)
         {
-            std::cout << "  Error Covariance Diagonal (m^2):\n";
-            std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
+            std::cout << std::format("  Error Covariance Diagonal (m^2): [{:.4f}, {:.4f}, {:.4f}]\n", 
                 results.errorCovariance(0,0), results.errorCovariance(1,1), results.errorCovariance(2,2));
         }
         else
