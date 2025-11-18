@@ -20,10 +20,14 @@ namespace // anonymous namespace for helper functions
         const std::function<RetType(const VecType&)>& fn = [](const VecType& x){ return x; }
     )
     {
-        RetType sum = RetType();
-        for(const VecType& v : vec)
+        if(vec.empty())
         {
-            sum += fn(v);
+            return RetType();
+        }
+        RetType sum = fn(vec[0]);
+        for(size_t i = 1; i < vec.size(); ++i)
+        {
+            sum += fn(vec[i]);
         }
         return sum;
     }
