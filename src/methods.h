@@ -74,7 +74,7 @@ Eigen::Vector3d linearLeastSquaresI_YueWang(
  * @param robustLossParam Parameter for the robust loss function (e.g., for Cauchy loss, this is the scale parameter)
  * @return Eigen::Vector3d Estimated position
  */
-Eigen::Vector3d robust_LLS-I_IRLS(
+Eigen::Vector3d robust_LLS_I_IRLS(
     const std::vector<Eigen::Vector3d>& anchorPositions,
     const std::vector<double>& ranges,
     const double rangeStdDev,
