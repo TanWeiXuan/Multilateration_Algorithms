@@ -360,6 +360,8 @@ Eigen::Vector3d robust_LLS-I_IRLS(
     std::vector<double> sqrtWeights(N, 1.0);
     const double sigmaInv = 1.0 / rangeStdDev; // whitening
 
+    Eigen::Vector3d posEstimate;
+
     const size_t maxOuterIterations = 10;
 
     double prevFnorm = std::numeric_limits<double>::max();
@@ -372,19 +374,35 @@ Eigen::Vector3d robust_LLS-I_IRLS(
         {
             Eigen::Vector3d p_i = anchorPositions[i];
             double d_i = ranges[i];
-            double W_i = sqrtWeights[i];
+            double W_i = sqrtWeights[i] * sigmaInv;
     
-            A(i, 0) = -2.0 * p_i.x();
-            A(i, 1) = -2.0 * p_i.y();
-            A(i, 2) = -2.0 * p_i.z();
-            A(i, 3) = 1.0;
+            WA(i, 0) = -2.0 * p_i.x() * sigmaInv;
+            WA(i, 1) = -2.0 * p_i.y() * sigmaInv;
+            WA(i, 2) = -2.0 * p_i.z() * sigmaInv;
+            WA(i, 3) = 1.0 * sigmaInv;
     
-            b(i) = sq(d_i) - p_i.squaredNorm();
+            Wb(i) = (sq(d_i) - p_i.squaredNorm()) * W_i;
         }
 
-        // Recompute weights using cauchy weights 
-        // TODO compute norm during reweighting
+        // Solve using BDCSVD for better numerical stability, especially when anchors are coplanar
+        Eigen::BDCSVD<Eigen::MatrixXd, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(A);
+        Eigen::VectorXd x = svd.solve(b);
+    
+        posEstimate = x.block<3,1>(0,0); 
+
         double currNorm = 0.0;
+        std::vector<double> residuals(N);
+        for (size_t i = 0; i < N; ++i)
+        {
+            // Compute weights using Cauchy loss function for next iteration
+            double modeledRange = (posEstimate - anchorPositions[i]).norm();
+            double whitenedResidual = (modeledRange - ranges[i]) / rangeStdDev;
+            double r = residuals[i] = whitenedResidual;
+            double c = robustLossParam;
+            double w = 1.0 / (1.0 + sq(r / c));
+            sqrtWeights[i] = std::sqrt(std::max(w, 1e-9)); // Clamp weights to avoid numerical issues
+            currNorm += sq(r);
+        }
         
         // Convergence checks
         if(std::abs(currNorm - prevFnorm) < 1e-6) break; // Absolute change in cost function
@@ -392,6 +410,8 @@ Eigen::Vector3d robust_LLS-I_IRLS(
 
         prevFnorm = currNorm;
     }
+
+    return posEstimate;
 }
 
 // END OF FILE //
