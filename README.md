@@ -75,23 +75,5 @@ Eigen::Vector3d linearLeastSquaresI_YueWang(
 );
 ```
 
-### 6. robust_LLS_I_IRLS
-A robust variant of the LLS-I method that uses an iteratively reweighted least squares (IRLS) approach. This method applies Cauchy loss weighting to make the estimation more resistant to outliers in the range measurements. It iteratively refines the position estimate by adjusting the weights based on the residuals from the previous iteration.
-
-**Parameters:**
-- `anchorPositions`: Position of anchors
-- `ranges`: Measured ranges from the point to each anchor
-- `rangeStdDev`: Standard deviation of range measurements (used for whitening the residuals)
-- `robustLossParam`: Parameter for the Cauchy loss function (controls the robustness threshold)
-
-**Signature:**
-```cpp
-Eigen::Vector3d robust_LLS_I_IRLS(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
-    const std::vector<double>& ranges,
-    const double rangeStdDev,
-    const double robustLossParam
-);
-```
 
 
