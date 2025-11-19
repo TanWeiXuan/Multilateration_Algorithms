@@ -349,7 +349,7 @@ Eigen::Vector3d linearLeastSquaresI_YueWang(
     return x.block<3,1>(0,0);
 }
 
-Eigen::Vector3d robust_LLS-I_IRLS(
+Eigen::Vector3d robust_LLS_I_IRLS(
     const std::vector<Eigen::Vector3d>& anchorPositions,
     const std::vector<double>& ranges,
     const double rangeStdDev,
