@@ -385,8 +385,8 @@ Eigen::Vector3d robust_LLS_I_IRLS(
         }
 
         // Solve using BDCSVD for better numerical stability, especially when anchors are coplanar
-        Eigen::BDCSVD<Eigen::MatrixXd, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(A);
-        Eigen::VectorXd x = svd.solve(b);
+        Eigen::BDCSVD<Eigen::MatrixXd, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(WA);
+        Eigen::VectorXd x = svd.solve(Wb);
     
         posEstimate = x.block<3,1>(0,0); 
 
