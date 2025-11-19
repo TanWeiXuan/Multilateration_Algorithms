@@ -35,6 +35,12 @@ void runTests(const TestParameters& params)
     std::cout << "\nTest 1.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
     runTest(testParams, linearLeastSquaresI_YueWang);
 
+    std::cout << "\nTest 1.6 (Robust LLS-I using IRLS):\n";
+    auto robustLlsI = std::bind(robust_LLS_I_IRLS,
+            std::placeholders::_1, std::placeholders::_2, testParams.rangeNoiseStdDev, 5.0
+        );
+    runTest(testParams, robustLlsI);
+
     // Test Set 2: No ranging outliers, but anchor position noise
     testParams.rangeOutlierRatio = 0.0;
     testParams.anchorPosNoiseStdDev = 0.25;
@@ -57,6 +63,9 @@ void runTests(const TestParameters& params)
 
     std::cout << "\nTest 2.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
     runTest(testParams, linearLeastSquaresI_YueWang);
+
+    std::cout << "\nTest 2.6 (Robust LLS-I using IRLS):\n";
+    runTest(testParams, robustLlsI);
 
     // Test Set 3: With ranging outliers
     testParams.rangeOutlierRatio = 0.1;
@@ -81,6 +90,9 @@ void runTests(const TestParameters& params)
 
     std::cout << "\nTest 3.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
     runTest(testParams, linearLeastSquaresI_YueWang);
+
+    std::cout << "\nTest 3.6 (Robust LLS-I using IRLS):\n";
+    runTest(testParams, robustLlsI);
 
     std::cout << "\nAll tests completed.\n";
 }
