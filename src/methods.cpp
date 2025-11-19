@@ -376,10 +376,10 @@ Eigen::Vector3d robust_LLS_I_IRLS(
             double d_i = ranges[i];
             double W_i = sqrtWeights[i] * sigmaInv;
     
-            WA(i, 0) = -2.0 * p_i.x() * sigmaInv;
-            WA(i, 1) = -2.0 * p_i.y() * sigmaInv;
-            WA(i, 2) = -2.0 * p_i.z() * sigmaInv;
-            WA(i, 3) = 1.0 * sigmaInv;
+            WA(i, 0) = -2.0 * p_i.x() * W_i;
+            WA(i, 1) = -2.0 * p_i.y() * W_i;
+            WA(i, 2) = -2.0 * p_i.z() * W_i;
+            WA(i, 3) = 1.0 * W_i
     
             Wb(i) = (sq(d_i) - p_i.squaredNorm()) * W_i;
         }
