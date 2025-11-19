@@ -66,19 +66,4 @@ Eigen::Vector3d linearLeastSquaresI_YueWang(
     const std::vector<double>& ranges
 );
 
-/**
- * @brief Robust method using a weighted version of LLS-I with an iteratively reweighted least squares approach
- * @param anchorPositions 
- * @param ranges 
- * @param rangeStdDev Standard deviation of the range measurements (used for whitening)
- * @param robustLossParam Parameter for the robust loss function (e.g., for Cauchy loss, this is the scale parameter)
- * @return Eigen::Vector3d Estimated position
- */
-Eigen::Vector3d robust_LLS_I_IRLS(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
-    const std::vector<double>& ranges,
-    const double rangeStdDev,
-    const double robustLossParam
-);
-
 // END OF FILE //
