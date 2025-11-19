@@ -65,7 +65,7 @@ Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
 ```
 
 ### 5. linearLeastSquaresI_YueWang
-A linear least squares method (LLS-I) based on the paper "Linear least squares localization in sensor networks" by Yue Wang (2015). This method solves a linearized version of the multilateration problem by formulating it as an overdetermined system and using SVD for numerical stability.
+A linear least squares method (LLS-I) based on the paper "Linear least squares localization in sensor networks" by Yue Wang (2015). This method solves a linearized version of the multilateration problem by formulating it as an overdetermined system.
 
 **Signature:**
 ```cpp
