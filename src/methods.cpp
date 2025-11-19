@@ -349,4 +349,49 @@ Eigen::Vector3d linearLeastSquaresI_YueWang(
     return x.block<3,1>(0,0);
 }
 
+Eigen::Vector3d robust_LLS-I_IRLS(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges,
+    const double rangeStdDev,
+    const double robustLossParam
+)
+{
+    const size_t N = ranges.size();
+    std::vector<double> sqrtWeights(N, 1.0);
+    const double sigmaInv = 1.0 / rangeStdDev; // whitening
+
+    const size_t maxOuterIterations = 10;
+
+    double prevFnorm = std::numeric_limits<double>::max();
+    for(size_t iter = 0; iter < maxOuterIterations; ++iter)
+    {
+        Eigen::MatrixXd WA(N, 4);
+        Eigen::VectorXd Wb(N);
+
+        for(size_t i = 0; i < N; ++i)
+        {
+            Eigen::Vector3d p_i = anchorPositions[i];
+            double d_i = ranges[i];
+            double W_i = sqrtWeights[i];
+    
+            A(i, 0) = -2.0 * p_i.x();
+            A(i, 1) = -2.0 * p_i.y();
+            A(i, 2) = -2.0 * p_i.z();
+            A(i, 3) = 1.0;
+    
+            b(i) = sq(d_i) - p_i.squaredNorm();
+        }
+
+        // Recompute weights using cauchy weights 
+        // TODO compute norm during reweighting
+        double currNorm = 0.0;
+        
+        // Convergence checks
+        if(std::abs(currNorm - prevFnorm) < 1e-6) break; // Absolute change in cost function
+        if(std::abs((currNorm - prevFnorm) / std::max(prevFnorm, 1e-9)) < 1e-6) break; // Relative change in cost function
+
+        prevFnorm = currNorm;
+    }
+}
+
 // END OF FILE //
