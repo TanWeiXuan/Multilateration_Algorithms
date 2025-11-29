@@ -66,4 +66,15 @@ Eigen::Vector3d linearLeastSquaresI_YueWang(
     const std::vector<double>& ranges
 );
 
+/**
+ * @brief LLS-II-2 method from "Linear least squares localization in sensor networks" by Yue Wang. (2015)
+ * @param anchorPositions 
+ * @param ranges 
+ * @return Eigen::Vector3d Estimated position
+ */
+Eigen::Vector3d linearLeastSquaresII_2_YueWang(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges
+);
+
 // END OF FILE //

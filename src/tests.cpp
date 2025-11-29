@@ -35,6 +35,9 @@ void runTests(const TestParameters& params)
     std::cout << "\nTest 1.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
     runTest(testParams, linearLeastSquaresI_YueWang);
 
+    std::cout << "\nTest 1.6 (Linear Least Squares - LLS-II-2 from Y. Wang. 2015):\n";
+    runTest(testParams, linearLeastSquaresII_2_YueWang);
+
     // Test Set 2: No ranging outliers, but anchor position noise
     testParams.rangeOutlierRatio = 0.0;
     testParams.anchorPosNoiseStdDev = 0.25;
@@ -57,6 +60,9 @@ void runTests(const TestParameters& params)
 
     std::cout << "\nTest 2.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
     runTest(testParams, linearLeastSquaresI_YueWang);
+
+    std::cout << "\nTest 2.6 (Linear Least Squares - LLS-II-2 from Y. Wang. 2015):\n";
+    runTest(testParams, linearLeastSquaresII_2_YueWang);
 
     // Test Set 3: With ranging outliers
     testParams.rangeOutlierRatio = 0.1;
@@ -81,6 +87,9 @@ void runTests(const TestParameters& params)
 
     std::cout << "\nTest 3.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
     runTest(testParams, linearLeastSquaresI_YueWang);
+
+    std::cout << "\nTest 3.6 (Linear Least Squares - LLS-II-2 from Y. Wang. 2015):\n";
+    runTest(testParams, linearLeastSquaresII_2_YueWang);
 
     std::cout << "\nAll tests completed.\n";
 }

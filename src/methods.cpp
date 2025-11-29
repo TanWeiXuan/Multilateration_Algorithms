@@ -349,4 +349,51 @@ Eigen::Vector3d linearLeastSquaresI_YueWang(
     return x.block<3,1>(0,0);
 }
 
+Eigen::Vector3d linearLeastSquaresII_2_YueWang(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges
+)
+{
+    const size_t N = ranges.size();
+    Eigen::MatrixXd A(N - 1, 3);
+    Eigen::VectorXd b(N - 1);
+
+    // Select shorstest range as reference
+    size_t refIndex = 0;
+    double minRange = ranges[0];
+    for(size_t i = 1; i < N; ++i)
+    {
+        if(ranges[i] < minRange)
+        {
+            minRange = ranges[i];
+            refIndex = i;
+        }
+    }
+
+    Eigen::Vector3d x_r = anchorPositions[refIndex];
+    double d_r = ranges[refIndex];
+
+    for(size_t i = 0, ii = 0; i < N; ++i)
+    {
+        if(i == refIndex) continue;
+
+        Eigen::Vector3d p_i = anchorPositions[i];
+        double d_i = ranges[i];
+
+        A(ii, 0) = 2.0 * (p_i.x() - x_r.x());
+        A(ii, 1) = 2.0 * (p_i.y() - x_r.y());
+        A(ii, 2) = 2.0 * (p_i.z() - x_r.z());
+
+        b(ii) = sq(d_r) - sq(d_i) - x_r.squaredNorm() + p_i.squaredNorm();
+
+        ++ii;
+    }
+
+    // Solve using BDCSVD for better numerical stability, especially when anchors are coplanar
+    Eigen::BDCSVD<Eigen::MatrixXd, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(A);
+    Eigen::Vector3d posEstimate = svd.solve(b);
+
+    return posEstimate;
+}
+
 // END OF FILE //
