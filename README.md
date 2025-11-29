@@ -76,4 +76,16 @@ Eigen::Vector3d linearLeastSquaresI_YueWang(
 ```
 
 
+### 6. linearLeastSquaresII_2_YueWang
+A linear least squares method (LLS-II-2) also from "Linear least squares localization in sensor networks" by Yue Wang (2015). This method solves a linearized version of the multilateration problem by formulating it as an overdetermined system. The system is linearized by subtracting the nonlinear expression for the shortest range measurement to its corresponding anchor.
+
+**Signature:**
+```cpp
+Eigen::Vector3d linearLeastSquaresII_2_YueWang(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges
+);
+```
+
+
 
