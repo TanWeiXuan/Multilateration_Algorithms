@@ -1,6 +1,6 @@
 #include "tests.h"
 #include "test_helpers.h"
-#include "methods.h"
+#include "true_range_multilateration_methods.h"
 
 #include <chrono>
 #include <iostream>
