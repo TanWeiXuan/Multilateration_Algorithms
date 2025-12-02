@@ -38,6 +38,12 @@ void runTests(const TestParameters& params)
     std::cout << "\nTest 1.6 (Linear Least Squares - LLS-II-2 from Y. Wang. 2015):\n";
     runMultilaterationTest(testParams, linearLeastSquaresII_2_YueWang);
 
+    std::cout << "\nTest 1.7 (Two-Step Weighted Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
+    auto tsWeightedLLSMethod = std::bind(TS_WeightedLinearLeastSquaresI_YueWang,
+            std::placeholders::_1, std::placeholders::_2, std::vector<double>(testParams.anchorPositions.size(), testParams.rangeNoiseStdDev)
+        );
+    runMultilaterationTest(testParams, tsWeightedLLSMethod);
+
     // Test Set 2: No ranging outliers, but anchor position noise
     testParams.rangeOutlierRatio = 0.0;
     testParams.anchorPosNoiseStdDev = 0.25;
@@ -63,6 +69,9 @@ void runTests(const TestParameters& params)
 
     std::cout << "\nTest 2.6 (Linear Least Squares - LLS-II-2 from Y. Wang. 2015):\n";
     runMultilaterationTest(testParams, linearLeastSquaresII_2_YueWang);
+
+    std::cout << "\nTest 2.7 (Two-Step Weighted Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
+    runMultilaterationTest(testParams, tsWeightedLLSMethod);
 
     // Test Set 3: With ranging outliers
     testParams.rangeOutlierRatio = 0.1;
@@ -90,6 +99,9 @@ void runTests(const TestParameters& params)
 
     std::cout << "\nTest 3.6 (Linear Least Squares - LLS-II-2 from Y. Wang. 2015):\n";
     runMultilaterationTest(testParams, linearLeastSquaresII_2_YueWang);
+
+    std::cout << "\nTest 3.7 (Two-Step Weighted Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
+    runMultilaterationTest(testParams, tsWeightedLLSMethod);
 
     std::cout << "\nAll tests completed.\n";
 }

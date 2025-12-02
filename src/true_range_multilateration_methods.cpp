@@ -401,4 +401,75 @@ Eigen::Vector3d linearLeastSquaresII_2_YueWang(
     return posEstimate;
 }
 
+Eigen::Vector3d TS_WeightedLinearLeastSquaresI_YueWang(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges,
+    const std::vector<double>& rangeStdDevs
+)
+{
+    // 1st step: Weighted Linear Least Squares I (Yue Wang)
+    const size_t N = ranges.size();
+    Eigen::MatrixXd A(N, 4);
+    Eigen::VectorXd b(N);
+
+    for(size_t i = 0; i < N; ++i)
+    {
+        Eigen::Vector3d p_i = anchorPositions[i];
+        double d_i = ranges[i];
+        double C_i = std::max((4 * sq(d_i) * sq(rangeStdDevs[i])), 1e-9); // Prevent division by zero
+        double w_i = 1.0 / std::sqrt(C_i);
+
+        A(i, 0) = -2.0 * p_i.x() * w_i;
+        A(i, 1) = -2.0 * p_i.y() * w_i;
+        A(i, 2) = -2.0 * p_i.z() * w_i;
+        A(i, 3) = 1.0 * w_i;
+
+        b(i) = (sq(d_i) - p_i.squaredNorm()) * w_i;
+    }
+
+    Eigen::BDCSVD<Eigen::MatrixXd, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(A);
+    Eigen::Vector4d lamda_WLLS = svd.solve(b);
+
+    // 2nd step: Refinement utilising the constraint of the dummy variable, R^2 = x^2 + y^2 + z^2
+    Eigen::Matrix4d S = A.transpose() * A; // S == (A^T * C^-1 * A), in the paper
+
+    Eigen::Matrix4d K = Eigen::Matrix4d::Zero();
+    K(0, 0) = 2.0 * lamda_WLLS(0);
+    K(1, 1) = 2.0 * lamda_WLLS(1);
+    K(2, 2) = 2.0 * lamda_WLLS(2);
+    K(3, 3) = -1.0;
+
+    Eigen::Matrix<double, 4, 3> G;
+    G << 1.0, 0.0, 0.0,
+         0.0, 1.0, 0.0,
+         0.0, 0.0, 1.0,
+         1.0, 1.0, 1.0;
+
+    Eigen::Matrix4d phi = K * S.inverse() * K;
+    Eigen::Matrix4d phi_inv = phi.inverse();
+
+    Eigen::Matrix<double, 4, 1> h;
+    h << sq(lamda_WLLS(0)),
+         sq(lamda_WLLS(1)),
+         sq(lamda_WLLS(2)),
+         lamda_WLLS(3);
+
+    Eigen::Matrix3d GT_phiInv_G = G.transpose() * phi_inv * G;
+    Eigen::Vector3d GT_phiInv_h = G.transpose() * phi_inv * h;
+
+    Eigen::Vector3d z_hat = GT_phiInv_G.ldlt().solve(GT_phiInv_h);
+
+    for(int i = 0; i < 3; ++i)
+    {
+        if(z_hat(i) < 0.0) z_hat(i) = 0.0; 
+    }
+
+    Eigen::Vector3d posEstimate;
+    posEstimate << std::sqrt(z_hat(0)) * signum(lamda_WLLS(0)),
+                   std::sqrt(z_hat(1)) * signum(lamda_WLLS(1)),
+                   std::sqrt(z_hat(2)) * signum(lamda_WLLS(2));
+
+    return posEstimate;
+}
+
 // END OF FILE //
