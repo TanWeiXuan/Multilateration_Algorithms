@@ -50,7 +50,7 @@ typedef std::function< Eigen::Vector3d(const std::vector<Eigen::Vector3d>&, cons
 
 void runTests(const TestParameters& params);
 
-void runTest(
+void runMultilaterationTest(
     const TestParameters& params, 
     MultilaterationFunction multilaterationMethod
 );
