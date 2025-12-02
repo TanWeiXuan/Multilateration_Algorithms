@@ -14,6 +14,11 @@ namespace // anonymous namespace for helper functions
         return x * x;
     }
 
+    template <typename T>
+    int signum(T val) {
+        return (T(0) < val) - (val < T(0));
+    }
+
     template<typename VecType, typename RetType = VecType>
     RetType sumOver(
         const std::vector<VecType>& vec, 
