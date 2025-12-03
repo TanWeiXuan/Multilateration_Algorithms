@@ -39,7 +39,7 @@ void runTests(const TestParameters& params)
     runMultilaterationTest(testParams, linearLeastSquaresII_2_YueWang);
 
     std::cout << "\nTest 1.7 (Two-Step Weighted Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
-    auto tsWeightedLLSMethod = std::bind(TS_WeightedLinearLeastSquaresI_YueWang,
+    auto tsWeightedLLSMethod = std::bind(twoStepWeightedLinearLeastSquaresI_YueWang,
             std::placeholders::_1, std::placeholders::_2, std::vector<double>(testParams.anchorPositions.size(), testParams.rangeNoiseStdDev)
         );
     runMultilaterationTest(testParams, tsWeightedLLSMethod);
