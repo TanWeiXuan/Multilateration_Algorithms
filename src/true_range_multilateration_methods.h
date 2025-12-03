@@ -78,7 +78,9 @@ Eigen::Vector3d linearLeastSquaresII_2_YueWang(
 );
 
 /**
- * @brief TS-WLLS-I method from "Linear least squares localization in sensor networks" by Yue Wang. (2015)
+ * @brief TS-WLLS-I method from "Linear least squares localization in sensor networks" by Yue Wang (2015),
+ * originally derived and proposed in "Accurate Sequential Weighted Least Squares Algorithm for Wireless
+ * Sensor Network Localization" by Frankie K. W. Chan and H. C. So
  * @param anchorPositions 
  * @param ranges 
  * @param rangeStdDevs Standard deviations of the range measurements (NOTE: rangeStdDevs.size() == ranges.size()
