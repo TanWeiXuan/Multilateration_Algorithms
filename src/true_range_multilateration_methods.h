@@ -84,7 +84,7 @@ Eigen::Vector3d linearLeastSquaresII_2_YueWang(
  * @param rangeStdDevs Standard deviations of the range measurements (NOTE: rangeStdDevs.size() == ranges.size()
  * @return Eigen::Vector3d Estimated position
 */
-Eigen::Vector3d TS_WeightedLinearLeastSquaresI_YueWang(
+Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
     const std::vector<Eigen::Vector3d>& anchorPositions,
     const std::vector<double>& ranges,
     const std::vector<double>& rangeStdDevs
