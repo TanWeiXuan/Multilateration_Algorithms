@@ -110,6 +110,8 @@ namespace // anonymous namespace for helper functions
 
 } // namespace anonymous
 
+namespace TrueRangeMultilateration
+{
 
 Eigen::Vector3d ordinaryLeastSquaresWikipedia(
     const std::vector<Eigen::Vector3d>& anchorPositions,
@@ -471,5 +473,7 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
 
     return posEstimate;
 }
+
+} // namespace TrueRangeMultilateration
 
 // END OF FILE //

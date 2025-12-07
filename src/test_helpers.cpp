@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <format>
+#include <random>
 
 std::mt19937_64 makeRandomEngine(std::optional<uint64_t> seed)
 {
@@ -90,7 +91,7 @@ std::vector<double> generateNoisyRanges(
 
 
 std::vector<double> generateNoisyRanges(
-    const TestParameters& params, 
+    const TrueRangeMultilateration::TestParameters& params, 
     std::mt19937_64& rng
 )
 {
@@ -146,7 +147,7 @@ std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
 
 
 std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
-    const TestParameters& params,
+    const TrueRangeMultilateration::TestParameters& params,
     std::mt19937_64& rng
 )
 {
@@ -158,7 +159,7 @@ std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
 }
 
 
-void printTestParams(const TestParameters& params)
+void printTestParams(const TrueRangeMultilateration::TestParameters& params)
 {
     std::cout << "Test Parameters:\n";
     std::cout << std::format("  True Position: [{:.2f}, {:.2f}, {:.2f}]\n",  params.truePosition.x(),  params.truePosition.y(),  params.truePosition.z());
@@ -192,12 +193,12 @@ void printTestParams(const TestParameters& params)
 }
 
 
-TestResults computeResults(
+TrueRangeMultilateration::TestResults computeResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
-    const TestParameters& params
+    const TrueRangeMultilateration::TestParameters& params
 )
 {
-    TestResults results;
+    TrueRangeMultilateration::TestResults results;
     
     Eigen::Vector3d err = Eigen::Vector3d::Zero();
     Eigen::Vector3d maxErr = Eigen::Vector3d::Zero();
@@ -227,7 +228,7 @@ TestResults computeResults(
 }
 
 
-void printResults(const TestResults& results, const PrintOptions& options)
+void printResults(const TrueRangeMultilateration::TestResults& results, const TrueRangeMultilateration::PrintOptions& options)
 {
     std::cout << "Results:\n";
     
@@ -266,11 +267,11 @@ void printResults(const TestResults& results, const PrintOptions& options)
 
 void computeAndPrintResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
-    const TestParameters& params,
-    const PrintOptions& options
+    const TrueRangeMultilateration::TestParameters& params,
+    const TrueRangeMultilateration::PrintOptions& options
 )
 {
-    TestResults results = computeResults(estimatedPositions, params);
+    TrueRangeMultilateration::TestResults results = computeResults(estimatedPositions, params);
     printResults(results, options);
 }
 

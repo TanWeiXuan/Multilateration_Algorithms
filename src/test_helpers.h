@@ -44,7 +44,7 @@ std::vector<double> generateNoisyRanges(
 );
 
 std::vector<double> generateNoisyRanges(
-    const TestParameters& params, 
+    const TrueRangeMultilateration::TestParameters& params, 
     std::mt19937_64& rng
 );
 
@@ -61,23 +61,26 @@ std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
 );
 
 std::vector<Eigen::Vector3d> generateNoisyAnchorPositions(
-    const TestParameters& params,
+    const TrueRangeMultilateration::TestParameters& params,
     std::mt19937_64& rng
 );
 
-void printTestParams(const TestParameters& params);
+void printTestParams(const TrueRangeMultilateration::TestParameters& params);
 
-TestResults computeResults(
+TrueRangeMultilateration::TestResults computeResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
-    const TestParameters& params
+    const TrueRangeMultilateration::TestParameters& params
 );
 
-void printResults(const TestResults& results, const PrintOptions& options = PrintOptions{});
+void printResults(
+    const TrueRangeMultilateration::TestResults& results, 
+    const TrueRangeMultilateration::PrintOptions& options = TrueRangeMultilateration::PrintOptions{}
+);
 
 void computeAndPrintResults(
     const std::vector<Eigen::Vector3d>& estimatedPositions,
-    const TestParameters& params,
-    const PrintOptions& options = PrintOptions{}
+    const TrueRangeMultilateration::TestParameters& params,
+    const TrueRangeMultilateration::PrintOptions& options = TrueRangeMultilateration::PrintOptions{}
 );
 
 // END OF FILE //

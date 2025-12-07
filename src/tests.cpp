@@ -8,6 +8,9 @@
 
 #include <Eigen/Dense>
 
+namespace TrueRangeMultilateration
+{
+
 void runTests(const TestParameters& params)
 {
     std::cout << "Running Tests...\n";
@@ -18,31 +21,31 @@ void runTests(const TestParameters& params)
     // No ouliers
     std::cout << std::format("\nTest Set 1 -- Std Dev: {:.2f}m, No Outliers\n", testParams.rangeNoiseStdDev);
     std::cout << "\nTest 1.1 (Ordinary Least Squares - Wikipedia Method):\n";
-    runMultilaterationTest(testParams, ordinaryLeastSquaresWikipedia);
+    runTest(testParams, ordinaryLeastSquaresWikipedia);
 
     std::cout << "\nTest 1.2 (Ordinary Least Squares - Wikipedia Method with BDCSVD):\n";
-    runMultilaterationTest(testParams, ordinaryLeastSquaresWikipedia2);
+    runTest(testParams, ordinaryLeastSquaresWikipedia2);
 
     std::cout << "\nTest 1.3 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
-    runMultilaterationTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
+    runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
 
     std::cout << "\nTest 1.4 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
     auto robustNllsEigenLM = std::bind(robustNonLinearLeastSquaresEigenLevenbergMarquardt,
             std::placeholders::_1, std::placeholders::_2, testParams.rangeNoiseStdDev, 5.0
         );
-    runMultilaterationTest(testParams, robustNllsEigenLM);
+    runTest(testParams, robustNllsEigenLM);
 
     std::cout << "\nTest 1.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
-    runMultilaterationTest(testParams, linearLeastSquaresI_YueWang);
+    runTest(testParams, linearLeastSquaresI_YueWang);
 
     std::cout << "\nTest 1.6 (Linear Least Squares - LLS-II-2 from Y. Wang. 2015):\n";
-    runMultilaterationTest(testParams, linearLeastSquaresII_2_YueWang);
+    runTest(testParams, linearLeastSquaresII_2_YueWang);
 
     std::cout << "\nTest 1.7 (Two-Step Weighted Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
     auto tsWeightedLLSMethod = std::bind(twoStepWeightedLinearLeastSquaresI_YueWang,
             std::placeholders::_1, std::placeholders::_2, std::vector<double>(testParams.anchorPositions.size(), testParams.rangeNoiseStdDev)
         );
-    runMultilaterationTest(testParams, tsWeightedLLSMethod);
+    runTest(testParams, tsWeightedLLSMethod);
 
     // Test Set 2: No ranging outliers, but anchor position noise
     testParams.rangeOutlierRatio = 0.0;
@@ -53,25 +56,25 @@ void runTests(const TestParameters& params)
     );
 
     std::cout << "\nTest 2.1 (Ordinary Least Squares - Wikipedia Method):\n";
-    runMultilaterationTest(testParams, ordinaryLeastSquaresWikipedia);
+    runTest(testParams, ordinaryLeastSquaresWikipedia);
 
     std::cout << "\nTest 2.2 (Ordinary Least Squares - Wikipedia Method with BDCSVD):\n";
-    runMultilaterationTest(testParams, ordinaryLeastSquaresWikipedia2);
+    runTest(testParams, ordinaryLeastSquaresWikipedia2);
 
     std::cout << "\nTest 2.3 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
-    runMultilaterationTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
+    runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
 
     std::cout << "\nTest 2.4 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
-    runMultilaterationTest(testParams, robustNllsEigenLM);
+    runTest(testParams, robustNllsEigenLM);
 
     std::cout << "\nTest 2.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
-    runMultilaterationTest(testParams, linearLeastSquaresI_YueWang);
+    runTest(testParams, linearLeastSquaresI_YueWang);
 
     std::cout << "\nTest 2.6 (Linear Least Squares - LLS-II-2 from Y. Wang. 2015):\n";
-    runMultilaterationTest(testParams, linearLeastSquaresII_2_YueWang);
+    runTest(testParams, linearLeastSquaresII_2_YueWang);
 
     std::cout << "\nTest 2.7 (Two-Step Weighted Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
-    runMultilaterationTest(testParams, tsWeightedLLSMethod);
+    runTest(testParams, tsWeightedLLSMethod);
 
     // Test Set 3: With ranging outliers
     testParams.rangeOutlierRatio = 0.1;
@@ -83,32 +86,32 @@ void runTests(const TestParameters& params)
 
     // With 10% outliers
     std::cout << "\nTest 3.1 (Ordinary Least Squares - Wikipedia Method):\n";
-    runMultilaterationTest(testParams, ordinaryLeastSquaresWikipedia);
+    runTest(testParams, ordinaryLeastSquaresWikipedia);
 
     std::cout << "\nTest 3.2 (Ordinary Least Squares - Wikipedia Method with BDCSVD):\n";
-    runMultilaterationTest(testParams, ordinaryLeastSquaresWikipedia2);
+    runTest(testParams, ordinaryLeastSquaresWikipedia2);
 
     std::cout << "\nTest 3.3 (Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
-    runMultilaterationTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
+    runTest(testParams, nonLinearLeastSquaresEigenLevenbergMarquardt);
 
     std::cout << "\nTest 3.4 (Robust Non-Linear Least Squares - Eigen Levenberg-Marquardt):\n";
-    runMultilaterationTest(testParams, robustNllsEigenLM);
+    runTest(testParams, robustNllsEigenLM);
 
     std::cout << "\nTest 3.5 (Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
-    runMultilaterationTest(testParams, linearLeastSquaresI_YueWang);
+    runTest(testParams, linearLeastSquaresI_YueWang);
 
     std::cout << "\nTest 3.6 (Linear Least Squares - LLS-II-2 from Y. Wang. 2015):\n";
-    runMultilaterationTest(testParams, linearLeastSquaresII_2_YueWang);
+    runTest(testParams, linearLeastSquaresII_2_YueWang);
 
     std::cout << "\nTest 3.7 (Two-Step Weighted Linear Least Squares - LLS-I from Y. Wang. 2015):\n";
-    runMultilaterationTest(testParams, tsWeightedLLSMethod);
+    runTest(testParams, tsWeightedLLSMethod);
 
     std::cout << "\nAll tests completed.\n";
 }
 
-void runMultilaterationTest(
+void runTest(
     const TestParameters& params, 
-    MultilaterationFunction multilaterationMethod
+    MultilaterationMethod multilaterationMethod
 )
 {
     std::mt19937_64 rng = makeRandomEngine(params.randomSeed);
@@ -140,5 +143,7 @@ void runMultilaterationTest(
     std::cout << std::format("  Total Time for {} runs: {:.3f} ms\n", params.numRuns, elapsed.count());
     std::cout << std::format("  Average Time per run: {:.4f} ms\n", (elapsed.count() * 1000.0) / static_cast<double>(params.numRuns));
 }
+
+} // namespace TrueRangeMultilateration
 
 // END OF FILE //

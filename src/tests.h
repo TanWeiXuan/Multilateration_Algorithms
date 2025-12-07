@@ -7,6 +7,9 @@
 
 #include <Eigen/Dense>
 
+namespace TrueRangeMultilateration
+{
+
 struct TestParameters {
     // Position of the target to be estimated
     Eigen::Vector3d truePosition = Eigen::Vector3d::Zero();
@@ -46,13 +49,16 @@ struct PrintOptions {
     bool printCovarianceDiagonalOnly = true;
 };
 
-typedef std::function< Eigen::Vector3d(const std::vector<Eigen::Vector3d>&, const std::vector<double>&) > MultilaterationFunction;
+typedef std::function< Eigen::Vector3d(const std::vector<Eigen::Vector3d>&, const std::vector<double>&) > 
+    MultilaterationMethod;
 
 void runTests(const TestParameters& params);
 
-void runMultilaterationTest(
+void runTest(
     const TestParameters& params, 
-    MultilaterationFunction multilaterationMethod
+    MultilaterationMethod multilaterationMethod
 );
+
+} // namespace TrueRangeMultilateration
 
 // END OF FILE //

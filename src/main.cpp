@@ -9,7 +9,7 @@ int main(int argc, char const *argv[])
 {
     std::cout << std::format("Multilateration Methods.\n\n");
 
-    TestParameters testParams;
+    TrueRangeMultilateration::TestParameters testParams;
     testParams.truePosition = Eigen::Vector3d(0.0, 0.0, 5.0);
     testParams.anchorPositions = {
         Eigen::Vector3d( -5.0, -5.0, 10.0 ),
@@ -27,7 +27,7 @@ int main(int argc, char const *argv[])
     testParams.rangeOutlierRatio = 0.0;
     testParams.rangeOutlierMagnitude = 100.0;
 
-    runTests(testParams);
+    TrueRangeMultilateration::runTests(testParams);
 
     return 0;
 }

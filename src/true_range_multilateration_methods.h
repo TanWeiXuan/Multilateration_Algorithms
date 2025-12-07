@@ -4,6 +4,9 @@
 
 #include <Eigen/Dense>
 
+namespace TrueRangeMultilateration
+{
+
 /**
  * @brief Method from https://en.wikipedia.org/wiki/True-range_multilateration#General_Multilateration
  * Uses ordinary least squares to solve the linearised problem
@@ -90,6 +93,8 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
     const std::vector<double>& ranges,
     const std::vector<double>& rangeStdDevs
 );
+
+} // namespace TrueRangeMultilateration
 
 
 // END OF FILE //
