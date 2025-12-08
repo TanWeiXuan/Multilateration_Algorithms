@@ -81,5 +81,17 @@ Eigen::Vector3d linearLeastSquaresII_2_YueWang(
 );
 ```
 
+### 7. twoStepWeightedLinearLeastSquaresI_YueWang
+A two-step weighted linear least squares method (TS-WLLS-I) from "Linear least squares localization in sensor networks" by Yue Wang (2015), originally developed and proposed in "A Simple and Efficient Estimator for Hyperbolic Location" by Y. T. Chan and K. C. Ho (1994). This method performs position estimation in two steps: the first step uses weighted linear least squares to obtain an initial estimate, and the second step refines the solution by utilizing the constraint of the dummy variable (R² = x² + y² + z²). The weighting takes into account the standard deviations of range measurements to improve estimation accuracy.
+
+**Signature:**
+```cpp
+Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const std::vector<double>& ranges,
+    const std::vector<double>& rangeStdDevs
+);
+```
+
 
 
