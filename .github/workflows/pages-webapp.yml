@@ -23,23 +23,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Ensure web dependencies
-        run: |
-          set -euxo pipefail
-          mkdir -p external
-
-          if [ ! -f external/raylib/CMakeLists.txt ]; then
-            git clone --depth 1 https://github.com/raysan5/raylib.git external/raylib
-          fi
-
-          if [ ! -f external/imgui/imgui.cpp ]; then
-            git clone --depth 1 https://github.com/ocornut/imgui.git external/imgui
-          fi
-
-          if [ ! -f external/rlimgui/CMakeLists.txt ]; then
-            git clone --depth 1 https://github.com/raylib-extras/rlImGui.git external/rlimgui
-          fi
-
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
         with:
@@ -49,25 +32,15 @@ jobs:
         run: emcmake cmake -S . -B build-web -DMULTILAT_BUILD_WEBAPP=ON -DMULTILAT_BUILD_CLI=OFF
 
       - name: Build
-        run: cmake --build build-web --config Release --target multilat_webapp
+        run: cmake --build build-web --config Release
 
       - name: Stage pages artifact
         run: |
-          set -euxo pipefail
           rm -rf dist-pages
           mkdir -p dist-pages
-
-          html_path="$(find build-web -name 'index.html' -type f | head -n 1)"
-          js_path="$(find build-web -name 'index.js' -type f | head -n 1)"
-          wasm_path="$(find build-web -name 'index.wasm' -type f | head -n 1)"
-
-          test -n "$html_path"
-          test -n "$js_path"
-          test -n "$wasm_path"
-
-          cp "$html_path" dist-pages/index.html
-          cp "$js_path" dist-pages/index.js
-          cp "$wasm_path" dist-pages/index.wasm
+          cp build-web/bin/index.html dist-pages/index.html
+          cp build-web/bin/index.js dist-pages/index.js
+          cp build-web/bin/index.wasm dist-pages/index.wasm
           touch dist-pages/.nojekyll
 
       - name: Upload Pages artifact
