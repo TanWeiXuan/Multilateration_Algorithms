@@ -38,9 +38,17 @@ jobs:
         run: |
           rm -rf dist-pages
           mkdir -p dist-pages
-          cp build-web/bin/index.html dist-pages/index.html
-          cp build-web/bin/index.js dist-pages/index.js
-          cp build-web/bin/index.wasm dist-pages/index.wasm
+
+          artifact_dir="$(dirname "$(find build-web -type f -name index.html -not -path '*/CMakeFiles/*' -print -quit)")"
+          if [ -z "${artifact_dir}" ] || [ ! -f "${artifact_dir}/index.html" ]; then
+            echo "Could not locate web artifact index.html under build-web"
+            find build-web -maxdepth 4 -type f | sort
+            exit 1
+          fi
+
+          cp "${artifact_dir}/index.html" dist-pages/index.html
+          cp "${artifact_dir}/index.js" dist-pages/index.js
+          cp "${artifact_dir}/index.wasm" dist-pages/index.wasm
           touch dist-pages/.nojekyll
 
       - name: Upload Pages artifact
