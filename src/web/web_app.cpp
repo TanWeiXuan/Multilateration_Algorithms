@@ -73,6 +73,17 @@ void WebApp::handleViewportInput() {
 void WebApp::drawScene() const {
     DrawRectangleRounded(viewport_.canvas, 0.02F, 1, Fade(LIGHTGRAY, 0.3F));
 
+    if (showEstimates_) {
+        const auto& samples = runner_.estimatedPositions();
+        const size_t stride = std::max<size_t>(1, samples.size() / std::max(1, maxRenderedEstimates_));
+        for (size_t i = 0; i < samples.size(); i += stride) {
+            const Vector2 p = viewport_.worldToScreen(
+                {static_cast<float>(samples[i].x()), static_cast<float>(samples[i].y())});
+            DrawLineEx({p.x - 3.0F, p.y - 3.0F}, {p.x + 3.0F, p.y + 3.0F}, 1.0F, Fade(RED, 0.3F));
+            DrawLineEx({p.x - 3.0F, p.y + 3.0F}, {p.x + 3.0F, p.y - 3.0F}, 1.0F, Fade(RED, 0.3F));
+        }
+    }
+
     for (const auto& anchor : anchors_) {
         const Vector2 w{static_cast<float>(anchor.position.x()), static_cast<float>(anchor.position.y())};
         const Vector2 s = viewport_.worldToScreen(w);
@@ -89,17 +100,6 @@ void WebApp::drawScene() const {
     DrawText("GT", static_cast<int>(gtS.x - 8.0F), static_cast<int>(gtS.y + 8.0F), 14, DARKGREEN);
     DrawText(TextFormat("z=%.2f m", params_.truePosition.z()), static_cast<int>(gtS.x - 20.0F),
              static_cast<int>(gtS.y + 22.0F), 12, DARKGRAY);
-
-    if (showEstimates_) {
-        const auto& samples = runner_.estimatedPositions();
-        const size_t stride = std::max<size_t>(1, samples.size() / std::max(1, maxRenderedEstimates_));
-        for (size_t i = 0; i < samples.size(); i += stride) {
-            const Vector2 p = viewport_.worldToScreen(
-                {static_cast<float>(samples[i].x()), static_cast<float>(samples[i].y())});
-            DrawLineEx({p.x - 3.0F, p.y - 3.0F}, {p.x + 3.0F, p.y + 3.0F}, 1.0F, Fade(RED, 0.3F));
-            DrawLineEx({p.x - 3.0F, p.y + 3.0F}, {p.x + 3.0F, p.y - 3.0F}, 1.0F, Fade(RED, 0.3F));
-        }
-    }
 }
 
 void WebApp::drawPanel() {
