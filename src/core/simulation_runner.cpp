@@ -82,7 +82,7 @@ double SimulationRunner::progress() const {
 }
 
 double SimulationRunner::elapsedMs() const {
-    const auto end = (status_ == Status::Completed) ? endedAt_ : std::chrono::steady_clock::now();
+    const auto end = (status_ != Status::Running) ? endedAt_ : std::chrono::steady_clock::now();
     return std::chrono::duration<double, std::milli>(end - startedAt_).count();
 }
 
