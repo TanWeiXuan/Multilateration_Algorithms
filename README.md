@@ -119,7 +119,7 @@ Expected paths:
 ```bash
 cmake -S . -B build -DMULTILAT_BUILD_CLI=ON -DMULTILAT_BUILD_WEBAPP=OFF
 cmake --build build
-./build/bin/multilat_cli
+./build/bin/main
 ```
 
 ### Local web build (Emscripten)

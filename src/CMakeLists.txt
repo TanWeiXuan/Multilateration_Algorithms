@@ -16,8 +16,12 @@ target_link_libraries(multilat_core PUBLIC
 )
 
 if(MULTILAT_BUILD_CLI)
-    add_executable(multilat_cli ${CMAKE_CURRENT_SOURCE_DIR}/cli/main.cpp)
-    target_link_libraries(multilat_cli PRIVATE multilat_core)
+    add_executable(main ${CMAKE_CURRENT_SOURCE_DIR}/cli/main.cpp)
+    target_link_libraries(main PRIVATE multilat_core)
+
+    # Keep the explicit CLI target name used by local docs while preserving
+    # compatibility with existing CI workflow that runs ./bin/main.
+    add_executable(multilat_cli ALIAS main)
 endif()
 
 if(MULTILAT_BUILD_WEBAPP)
