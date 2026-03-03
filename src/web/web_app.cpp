@@ -226,14 +226,14 @@ void WebApp::drawPanel() {
         for (size_t i = 0; i < anchors_.size(); ++i) {
             float values[3] = {static_cast<float>(anchors_[i].position.x()), static_cast<float>(anchors_[i].position.y()),
                                static_cast<float>(anchors_[i].position.z())};
-            if (ImGui::InputFloat3(("A" + std::to_string(i)).c_str(), values)) {
+            if (ImGui::InputFloat3(("A" + std::to_string(i)).c_str(), values, "%.2f")) {
                 anchors_[i].position = Eigen::Vector3d(values[0], values[1], values[2]);
             }
         }
 
         float gt[3] = {static_cast<float>(params_.truePosition.x()), static_cast<float>(params_.truePosition.y()),
                        static_cast<float>(params_.truePosition.z())};
-        if (ImGui::InputFloat3("GT xyz", gt)) {
+        if (ImGui::InputFloat3("GT xyz", gt, "%.2f")) {
             params_.truePosition = Eigen::Vector3d(gt[0], gt[1], gt[2]);
         }
     }
