@@ -36,6 +36,24 @@ if(MULTILAT_BUILD_WEBAPP)
     set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
     add_subdirectory(${CMAKE_SOURCE_DIR}/external/raylib ${CMAKE_BINARY_DIR}/external/raylib)
 
+    set(MULTILAT_IMGUI_SOURCES
+        ${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp
+        ${CMAKE_SOURCE_DIR}/external/imgui/imgui_draw.cpp
+        ${CMAKE_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
+    )
+    if(EXISTS ${CMAKE_SOURCE_DIR}/external/imgui/imgui_tables.cpp)
+        list(APPEND MULTILAT_IMGUI_SOURCES
+            ${CMAKE_SOURCE_DIR}/external/imgui/imgui_tables.cpp
+        )
+    endif()
+
+    add_library(imgui STATIC
+        ${MULTILAT_IMGUI_SOURCES}
+    )
+    target_include_directories(imgui PUBLIC
+        ${CMAKE_SOURCE_DIR}/external/imgui
+    )
+
     if(EXISTS ${CMAKE_SOURCE_DIR}/external/rlimgui/CMakeLists.txt)
         add_subdirectory(${CMAKE_SOURCE_DIR}/external/rlimgui ${CMAKE_BINARY_DIR}/external/rlimgui)
     else()
@@ -46,8 +64,8 @@ if(MULTILAT_BUILD_WEBAPP)
             ${CMAKE_SOURCE_DIR}/external/imgui
             ${CMAKE_SOURCE_DIR}/external/rlimgui
         )
-        target_link_libraries(rlImGui PUBLIC raylib)
     endif()
+    target_link_libraries(rlImGui PUBLIC raylib imgui)
 
     add_executable(multilat_web
         ${CMAKE_CURRENT_SOURCE_DIR}/web/web_main.cpp
@@ -58,7 +76,7 @@ if(MULTILAT_BUILD_WEBAPP)
         ${CMAKE_SOURCE_DIR}/external/imgui
         ${CMAKE_SOURCE_DIR}/external/rlimgui
     )
-    target_link_libraries(multilat_web PRIVATE multilat_core raylib rlImGui)
+    target_link_libraries(multilat_web PRIVATE multilat_core raylib rlImGui imgui)
 
     # Preserve compatibility with existing references while standardizing
     # on the explicit Emscripten web target name `multilat_web`.
