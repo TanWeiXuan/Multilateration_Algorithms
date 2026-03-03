@@ -165,9 +165,10 @@ void WebApp::drawPanel() {
 
     if (ImGui::CollapsingHeader("Test Parameter Configuration", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::InputDouble("rangeNoiseStdDev", &params_.rangeNoiseStdDev, 0.01, 0.1, "%.3f");
-        float rangeOutlierRatio = static_cast<float>(params_.rangeOutlierRatio);
-        if (ImGui::SliderFloat("rangeOutlierRatio", &rangeOutlierRatio, 0.0F, 1.0F)) {
-            params_.rangeOutlierRatio = static_cast<double>(rangeOutlierRatio);
+        double rangeOutlierPercentage = params_.rangeOutlierRatio * 100.0;
+        if (ImGui::InputDouble("rangeOutlierRatio", &rangeOutlierPercentage, 0.1, 1.0, "%.1f%%")) {
+            rangeOutlierPercentage = std::clamp(rangeOutlierPercentage, 0.0, 100.0);
+            params_.rangeOutlierRatio = rangeOutlierPercentage / 100.0;
         }
         params_.rangeOutlierRatio = std::clamp(params_.rangeOutlierRatio, 0.0, 1.0);
         ImGui::InputDouble("rangeOutlierMagnitude", &params_.rangeOutlierMagnitude);
