@@ -245,7 +245,7 @@ void WebApp::drawPanel() {
             rangeOutlierPercentage = std::clamp(rangeOutlierPercentage, 0.0, 100.0);
             params_.rangeOutlierRatio = rangeOutlierPercentage / 100.0;
         }
-        params_.rangeOutlierRatio = std::clamp(params_.rangeOutlierRatio, 0.1, 1.0, "%.2f%%");
+        params_.rangeOutlierRatio = std::clamp(params_.rangeOutlierRatio, 0.1, 1.0);
         if (ImGui::InputDouble("rangeOutlierMagnitude", &params_.rangeOutlierMagnitude)) {
             params_.rangeOutlierMagnitude = std::max(params_.rangeOutlierMagnitude, 0.0);
         }
