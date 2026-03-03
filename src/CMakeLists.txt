@@ -27,14 +27,27 @@ endif()
 if(MULTILAT_BUILD_WEBAPP)
     if(NOT EXISTS ${CMAKE_SOURCE_DIR}/external/raylib/CMakeLists.txt
        OR NOT EXISTS ${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp
-       OR NOT EXISTS ${CMAKE_SOURCE_DIR}/external/rlimgui/CMakeLists.txt)
+       OR NOT EXISTS ${CMAKE_SOURCE_DIR}/external/rlimgui/rlImGui.cpp
+       OR NOT EXISTS ${CMAKE_SOURCE_DIR}/external/rlimgui/rlImGui.h)
         message(FATAL_ERROR "Web dependencies missing. Run `git submodule update --init --recursive`.")
     endif()
 
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
     add_subdirectory(${CMAKE_SOURCE_DIR}/external/raylib ${CMAKE_BINARY_DIR}/external/raylib)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/external/rlimgui ${CMAKE_BINARY_DIR}/external/rlimgui)
+
+    if(EXISTS ${CMAKE_SOURCE_DIR}/external/rlimgui/CMakeLists.txt)
+        add_subdirectory(${CMAKE_SOURCE_DIR}/external/rlimgui ${CMAKE_BINARY_DIR}/external/rlimgui)
+    else()
+        add_library(rlImGui
+            ${CMAKE_SOURCE_DIR}/external/rlimgui/rlImGui.cpp
+        )
+        target_include_directories(rlImGui PUBLIC
+            ${CMAKE_SOURCE_DIR}/external/imgui
+            ${CMAKE_SOURCE_DIR}/external/rlimgui
+        )
+        target_link_libraries(rlImGui PUBLIC raylib)
+    endif()
 
     add_executable(multilat_web
         ${CMAKE_CURRENT_SOURCE_DIR}/web/web_main.cpp

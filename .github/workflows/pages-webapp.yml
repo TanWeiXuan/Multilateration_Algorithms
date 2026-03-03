@@ -28,6 +28,11 @@ jobs:
         with:
           version: latest
 
+      - name: Debug rlimgui checkout
+        run: |
+          echo "Listing external/rlimgui files"
+          find external/rlimgui -maxdepth 2 -type f | sort
+
       - name: Configure
         run: emcmake cmake -S . -B build-web -DMULTILAT_BUILD_WEBAPP=ON -DMULTILAT_BUILD_CLI=OFF
 
