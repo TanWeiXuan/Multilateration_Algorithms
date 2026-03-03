@@ -95,3 +95,60 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
 
 
 
+
+## Web App (GitHub Pages, Raylib + Dear ImGui + Emscripten)
+
+This branch now includes a web app target that visualizes anchors, GT, and Monte Carlo estimate samples on an XY viewport.
+
+### Repository setup
+
+This project expects UI dependencies as git submodules:
+
+```bash
+git submodule update --init --recursive
+```
+
+Expected paths:
+
+- `external/raylib`
+- `external/imgui`
+- `external/rlimgui`
+
+### Native CLI build
+
+```bash
+cmake -S . -B build -DMULTILAT_BUILD_CLI=ON -DMULTILAT_BUILD_WEBAPP=OFF
+cmake --build build
+./build/bin/main
+```
+
+### Local web build (Emscripten)
+
+```bash
+emcmake cmake -S . -B build-web -DMULTILAT_BUILD_WEBAPP=ON -DMULTILAT_BUILD_CLI=OFF
+cmake --build build-web --config Release
+```
+
+If configured correctly, `build-web/bin/index.html` is produced.
+
+### Serve locally
+
+```bash
+python3 -m http.server 8080 --directory build-web/bin
+```
+
+Then open `http://localhost:8080`.
+
+### GitHub Pages deployment
+
+The workflow `.github/workflows/pages-webapp.yml` builds the web target and deploys using the Pages artifact flow.
+
+Maintainer checklist:
+
+1. Set **Settings → Pages → Source** to **GitHub Actions**.
+2. Ensure Actions/workflow permissions allow Pages deployment.
+3. Verify `github-pages` environment is not blocked by protection rules.
+
+### Mobile touch support
+
+Mouse pan/zoom is implemented first. Touch pan/pinch is best-effort and can be extended in follow-up PRs.
