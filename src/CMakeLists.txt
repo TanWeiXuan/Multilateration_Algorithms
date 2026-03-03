@@ -33,20 +33,24 @@ if(MULTILAT_BUILD_WEBAPP)
         add_subdirectory(${CMAKE_SOURCE_DIR}/external/raylib ${CMAKE_BINARY_DIR}/external/raylib)
         add_subdirectory(${CMAKE_SOURCE_DIR}/external/rlimgui ${CMAKE_BINARY_DIR}/external/rlimgui)
 
-        add_executable(multilat_webapp
+        add_executable(multilat_web
             ${CMAKE_CURRENT_SOURCE_DIR}/web/web_main.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/web/web_app.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/web/viewport2d.cpp
         )
-        target_include_directories(multilat_webapp PRIVATE
+        target_include_directories(multilat_web PRIVATE
             ${CMAKE_SOURCE_DIR}/external/imgui
             ${CMAKE_SOURCE_DIR}/external/rlimgui
         )
-        target_link_libraries(multilat_webapp PRIVATE multilat_core raylib rlImGui)
+        target_link_libraries(multilat_web PRIVATE multilat_core raylib rlImGui)
+
+        # Preserve compatibility with existing references while standardizing
+        # on the explicit Emscripten web target name `multilat_web`.
+        add_executable(multilat_webapp ALIAS multilat_web)
 
         if(EMSCRIPTEN)
-            set_target_properties(multilat_webapp PROPERTIES OUTPUT_NAME index SUFFIX ".html")
-            target_link_options(multilat_webapp PRIVATE
+            set_target_properties(multilat_web PROPERTIES OUTPUT_NAME index SUFFIX ".html")
+            target_link_options(multilat_web PRIVATE
                 "-sUSE_GLFW=3"
                 "-sASYNCIFY"
                 "-sALLOW_MEMORY_GROWTH=1"
