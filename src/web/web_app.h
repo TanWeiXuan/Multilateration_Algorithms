@@ -20,6 +20,7 @@ class WebApp {
   private:
     void handleViewportInput();
     void drawScene() const;
+    void drawGrid() const;
     void drawPanel();
     void fitView();
 
