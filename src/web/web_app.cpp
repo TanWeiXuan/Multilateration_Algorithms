@@ -193,26 +193,27 @@ void WebApp::drawPanel() {
     const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
     const ImVec2 workPos = mainViewport->WorkPos;
     const ImVec2 workSize = mainViewport->WorkSize;
-    const bool isPortrait = workSize.y > workSize.x;
+    const bool isMobileLayout = workSize.x < 900.0F;
     const float margin = 12.0F;
 
-    const ImVec2 minPanelSize = isPortrait ? ImVec2{320.0F, 360.0F} : ImVec2{280.0F, 360.0F};
+    ImGuiIO& io = ImGui::GetIO();
+    io.FontGlobalScale = isMobileLayout ? 1.2F : 1.0F;
+
+    const float panelWidth = std::clamp(isMobileLayout ? 360.0F : 320.0F, 280.0F, workSize.x - margin * 2.0F);
+    const float panelHeight = std::clamp(workSize.y * (isMobileLayout ? 0.72F : 0.65F), 360.0F,
+                                         workSize.y - margin * 2.0F);
+    const ImVec2 panelSize{panelWidth, panelHeight};
+
+    const ImVec2 minPanelSize = ImVec2{280.0F, 360.0F};
     const ImVec2 maxPanelSize = ImVec2{std::max(minPanelSize.x, workSize.x - margin * 2.0F),
                                        std::max(minPanelSize.y, workSize.y - margin * 2.0F)};
 
     ImGui::SetNextWindowSizeConstraints(minPanelSize, maxPanelSize);
 
-    if (isPortrait) {
-        ImGui::SetNextWindowPos({workPos.x + margin, workPos.y + margin}, ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize({std::max(minPanelSize.x, workSize.x - margin * 2.0F),
-                                  std::max(minPanelSize.y, workSize.y * 0.58F)},
-                                 ImGuiCond_FirstUseEver);
-    } else {
-        ImGui::SetNextWindowPos({workPos.x + workSize.x - 305.0F, workPos.y + margin}, ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize({290.0F, std::max(480.0F, workSize.y * 0.65F)}, ImGuiCond_FirstUseEver);
-    }
+    ImGui::SetNextWindowPos({workPos.x + workSize.x - panelSize.x - margin, workPos.y + margin}, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(panelSize, ImGuiCond_Always);
 
-    ImGui::Begin("Multilateration Controls", nullptr, ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("Multilateration Controls", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
     if (ImGui::CollapsingHeader("Anchor and GT Configuration", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Button("Add Anchor")) {
