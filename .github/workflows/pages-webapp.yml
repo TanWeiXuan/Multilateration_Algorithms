@@ -31,6 +31,9 @@ jobs:
       - name: Configure
         run: emcmake cmake -S . -B build-web -DMULTILAT_BUILD_WEBAPP=ON -DMULTILAT_BUILD_CLI=OFF
 
+      - name: Build target list (debug)
+        run: cmake --build build-web --target help
+
       - name: Build
         run: cmake --build build-web --config Release --target multilat_web
 
