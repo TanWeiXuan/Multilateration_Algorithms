@@ -89,6 +89,7 @@ if(MULTILAT_BUILD_WEBAPP)
             "-sASYNCIFY"
             "-sALLOW_MEMORY_GROWTH=1"
             "-sASSERTIONS=1"
+            "--shell-file=${CMAKE_CURRENT_SOURCE_DIR}/web/emscripten_shell.html"
         )
     endif()
 endif()
