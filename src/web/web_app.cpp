@@ -56,7 +56,64 @@ void WebApp::handleViewportInput() {
     const Vector2 mouse = GetMousePosition();
     const bool overCanvas = CheckCollisionPointRec(mouse, viewport_.canvas);
     const ImGuiIO& io = ImGui::GetIO();
-    if (!overCanvas || io.WantCaptureMouse) {
+    if (io.WantCaptureMouse) {
+        touchPanActive_ = false;
+        touchPinchActive_ = false;
+        return;
+    }
+
+    const int touchPoints = GetTouchPointCount();
+    if (touchPoints > 0) {
+        if (touchPoints == 1) {
+            const Vector2 touch = GetTouchPosition(0);
+            if (!CheckCollisionPointRec(touch, viewport_.canvas)) {
+                touchPanActive_ = false;
+                touchPinchActive_ = false;
+                return;
+            }
+
+            if (touchPanActive_) {
+                viewport_.panByScreenDelta({touch.x - lastTouchPosition_.x, touch.y - lastTouchPosition_.y});
+            }
+
+            lastTouchPosition_ = touch;
+            touchPanActive_ = true;
+            touchPinchActive_ = false;
+            return;
+        }
+
+        const Vector2 touchA = GetTouchPosition(0);
+        const Vector2 touchB = GetTouchPosition(1);
+        const Vector2 midpoint = {(touchA.x + touchB.x) * 0.5F, (touchA.y + touchB.y) * 0.5F};
+        if (!CheckCollisionPointRec(midpoint, viewport_.canvas)) {
+            touchPanActive_ = false;
+            touchPinchActive_ = false;
+            return;
+        }
+
+        const float dx = touchA.x - touchB.x;
+        const float dy = touchA.y - touchB.y;
+        const float distance = std::sqrt(dx * dx + dy * dy);
+
+        if (touchPinchActive_) {
+            viewport_.panByScreenDelta({midpoint.x - lastTouchMidpoint_.x, midpoint.y - lastTouchMidpoint_.y});
+            if (lastTouchDistance_ > 0.0F) {
+                const float zoomFactor = std::clamp(distance / lastTouchDistance_, 0.85F, 1.15F);
+                viewport_.zoomAtScreenPoint(zoomFactor, midpoint);
+            }
+        }
+
+        touchPinchActive_ = true;
+        touchPanActive_ = false;
+        lastTouchMidpoint_ = midpoint;
+        lastTouchDistance_ = distance;
+        return;
+    }
+
+    touchPanActive_ = false;
+    touchPinchActive_ = false;
+
+    if (!overCanvas) {
         return;
     }
 
