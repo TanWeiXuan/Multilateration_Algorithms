@@ -133,8 +133,28 @@ void WebApp::drawGrid() const {
 }
 
 void WebApp::drawPanel() {
-    ImGui::SetNextWindowPos({static_cast<float>(GetScreenWidth() - 305), 15.0F}, ImGuiCond_Always);
-    ImGui::SetNextWindowSize({290.0F, 480.0F}, ImGuiCond_Always);
+    const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+    const ImVec2 workPos = mainViewport->WorkPos;
+    const ImVec2 workSize = mainViewport->WorkSize;
+    const bool isPortrait = workSize.y > workSize.x;
+    const float margin = 12.0F;
+
+    const ImVec2 minPanelSize = isPortrait ? ImVec2{320.0F, 360.0F} : ImVec2{280.0F, 360.0F};
+    const ImVec2 maxPanelSize = ImVec2{std::max(minPanelSize.x, workSize.x - margin * 2.0F),
+                                       std::max(minPanelSize.y, workSize.y - margin * 2.0F)};
+
+    ImGui::SetNextWindowSizeConstraints(minPanelSize, maxPanelSize);
+
+    if (isPortrait) {
+        ImGui::SetNextWindowPos({workPos.x + margin, workPos.y + margin}, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize({std::max(minPanelSize.x, workSize.x - margin * 2.0F),
+                                  std::max(minPanelSize.y, workSize.y * 0.58F)},
+                                 ImGuiCond_FirstUseEver);
+    } else {
+        ImGui::SetNextWindowPos({workPos.x + workSize.x - 305.0F, workPos.y + margin}, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize({290.0F, std::max(480.0F, workSize.y * 0.65F)}, ImGuiCond_FirstUseEver);
+    }
+
     ImGui::Begin("Multilateration Controls", nullptr, ImGuiWindowFlags_NoCollapse);
 
     if (ImGui::CollapsingHeader("Anchor and GT Configuration", ImGuiTreeNodeFlags_DefaultOpen)) {
