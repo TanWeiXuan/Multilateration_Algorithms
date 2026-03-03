@@ -29,8 +29,7 @@ WebApp::WebApp() {
 }
 
 void WebApp::runFrame() {
-    viewport_.canvas = {15.0F, 15.0F, static_cast<float>(GetScreenWidth()) - 330.0F,
-                        static_cast<float>(GetScreenHeight()) - 30.0F};
+    viewport_.canvas = {0.0F, 0.0F, static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())};
 
     if (fitRequested_) {
         fitView();
@@ -134,8 +133,7 @@ void WebApp::drawGrid() const {
 }
 
 void WebApp::drawPanel() {
-    ImGui::SetNextWindowPos({static_cast<float>(GetScreenWidth() - 305), static_cast<float>(GetScreenHeight() - 500)},
-                            ImGuiCond_Always);
+    ImGui::SetNextWindowPos({static_cast<float>(GetScreenWidth() - 305), 15.0F}, ImGuiCond_Always);
     ImGui::SetNextWindowSize({290.0F, 480.0F}, ImGuiCond_Always);
     ImGui::Begin("Multilateration Controls", nullptr, ImGuiWindowFlags_NoCollapse);
 
