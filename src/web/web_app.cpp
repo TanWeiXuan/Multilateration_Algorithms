@@ -177,7 +177,7 @@ void WebApp::drawPanel() {
         }
     }
 
-    if (ImGui::CollapsingHeader("Start + Progress", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Simulation Start / Progress", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Button("Start Simulation")) {
             params_.anchorPositions.clear();
             params_.anchorPositions.reserve(anchors_.size());
@@ -194,9 +194,9 @@ void WebApp::drawPanel() {
 
     if (ImGui::CollapsingHeader("Test Results", ImGuiTreeNodeFlags_DefaultOpen)) {
         const auto& r = runner_.results();
-        ImGui::Text("MAE: [%.3f %.3f %.3f]", r.meanAbsError.x(), r.meanAbsError.y(), r.meanAbsError.z());
-        ImGui::Text("Max: [%.3f %.3f %.3f]", r.maxError.x(), r.maxError.y(), r.maxError.z());
-        ImGui::Text("Cov diag: [%.4f %.4f %.4f]", r.errorCovariance(0, 0), r.errorCovariance(1, 1),
+        ImGui::Text("Mean Absolute Error:\n [%.3f %.3f %.3f]", r.meanAbsError.x(), r.meanAbsError.y(), r.meanAbsError.z());
+        ImGui::Text("Max Error:\n [%.3f %.3f %.3f]", r.maxError.x(), r.maxError.y(), r.maxError.z());
+        ImGui::Text("Covariance Diagonal:\n [%.4f %.4f %.4f]", r.errorCovariance(0, 0), r.errorCovariance(1, 1),
                     r.errorCovariance(2, 2));
         ImGui::Text("Elapsed: %.1f ms", runner_.elapsedMs());
     }
