@@ -114,6 +114,16 @@ Expected paths:
 - `external/imgui`
 - `external/rlimgui`
 
+If submodules are not yet configured in your clone, populate these folders manually:
+
+```bash
+git clone https://github.com/raysan5/raylib.git external/raylib
+git clone https://github.com/ocornut/imgui.git external/imgui
+git clone https://github.com/raylib-extras/rlImGui.git external/rlimgui
+```
+
+The `pages-webapp` workflow also bootstraps these dependencies automatically when submodules are missing.
+
 ### Native CLI build
 
 ```bash
