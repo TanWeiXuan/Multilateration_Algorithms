@@ -202,7 +202,7 @@ void WebApp::drawPanel() {
     const float panelWidth = std::clamp(isMobileLayout ? 360.0F : 320.0F, 280.0F, workSize.x - margin * 2.0F);
     const float panelHeight = std::clamp(workSize.y * (isMobileLayout ? 0.72F : 0.65F), 360.0F,
                                          workSize.y - margin * 2.0F);
-    const ImVec2 panelSize{panelWidth, panelHeight};
+    const ImVec2 panelDefaultSize{panelWidth, panelHeight};
 
     const ImVec2 minPanelSize = ImVec2{280.0F, 360.0F};
     const ImVec2 maxPanelSize = ImVec2{std::max(minPanelSize.x, workSize.x - margin * 2.0F),
@@ -210,8 +210,9 @@ void WebApp::drawPanel() {
 
     ImGui::SetNextWindowSizeConstraints(minPanelSize, maxPanelSize);
 
-    ImGui::SetNextWindowPos({workPos.x + workSize.x - panelSize.x - margin, workPos.y + margin}, ImGuiCond_Always);
-    ImGui::SetNextWindowSize(panelSize, ImGuiCond_Always);
+    ImGui::SetNextWindowPos({workPos.x + workSize.x - margin, workPos.y + margin}, ImGuiCond_Always,
+                            ImVec2{1.0F, 0.0F});
+    ImGui::SetNextWindowSize(panelDefaultSize, ImGuiCond_FirstUseEver);
 
     ImGui::Begin("Multilateration Controls", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
