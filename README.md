@@ -92,3 +92,6 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
     const std::vector<double>& rangeStdDevs
 );
 ```
+
+### Web App
+Test out algorithms here under different noise parameters and anchor configurations here: https://tanweixuan.github.io/Multilateration_Algorithms/
