@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <Eigen/Dense>
+#include <raylib.h>
 
 #include "../core/simulation_runner.h"
 #include "viewport2d.h"
@@ -31,4 +32,9 @@ class WebApp {
     bool showEstimates_ = true;
     int maxRenderedEstimates_ = 1000;
     bool fitRequested_ = true;
+    bool touchPanActive_ = false;
+    bool touchPinchActive_ = false;
+    Vector2 lastTouchPosition_ = {0.0F, 0.0F};
+    Vector2 lastTouchMidpoint_ = {0.0F, 0.0F};
+    float lastTouchDistance_ = 0.0F;
 };
