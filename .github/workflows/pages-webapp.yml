@@ -31,8 +31,16 @@ jobs:
       - name: Configure
         run: emcmake cmake -S . -B build-web -DMULTILAT_BUILD_WEBAPP=ON -DMULTILAT_BUILD_CLI=OFF
 
+      - name: Build target list (debug)
+        run: cmake --build build-web --target help
+
       - name: Build
-        run: cmake --build build-web --config Release
+        run: cmake --build build-web --config Release --target multilat_web
+
+      - name: Debug generated web artifacts
+        run: |
+          echo "Generated web artifacts under build-web:"
+          find build-web -type f \( -name '*.html' -o -name '*.js' -o -name '*.wasm' \) -not -path '*/CMakeFiles/*' | sort
 
       - name: Stage pages artifact
         run: |
@@ -46,9 +54,17 @@ jobs:
             exit 1
           fi
 
-          cp "${artifact_dir}/index.html" dist-pages/index.html
-          cp "${artifact_dir}/index.js" dist-pages/index.js
-          cp "${artifact_dir}/index.wasm" dist-pages/index.wasm
+          cp "${artifact_dir}/"*.html dist-pages/
+          cp "${artifact_dir}/"*.js dist-pages/
+          cp "${artifact_dir}/"*.wasm dist-pages/
+
+          if [ ! -f dist-pages/index.html ]; then
+            echo "Missing required dist-pages/index.html after staging."
+            echo "Contents of dist-pages:"
+            find dist-pages -maxdepth 2 -type f | sort
+            exit 1
+          fi
+
           touch dist-pages/.nojekyll
 
       - name: Upload Pages artifact
