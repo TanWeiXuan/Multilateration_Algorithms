@@ -1,6 +1,7 @@
 #include "web_app.h"
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 
 #include <imgui.h>
@@ -72,6 +73,7 @@ void WebApp::handleViewportInput() {
 
 void WebApp::drawScene() const {
     DrawRectangleRounded(viewport_.canvas, 0.02F, 1, Fade(LIGHTGRAY, 0.3F));
+    drawGrid();
 
     if (showEstimates_) {
         const auto& samples = runner_.estimatedPositions();
@@ -100,6 +102,35 @@ void WebApp::drawScene() const {
     DrawText("GT", static_cast<int>(gtS.x - 8.0F), static_cast<int>(gtS.y + 8.0F), 14, DARKGREEN);
     DrawText(TextFormat("z=%.2f m", params_.truePosition.z()), static_cast<int>(gtS.x - 20.0F),
              static_cast<int>(gtS.y + 22.0F), 12, DARKGRAY);
+}
+
+void WebApp::drawGrid() const {
+    const Vector2 topLeft = viewport_.screenToWorld({viewport_.canvas.x, viewport_.canvas.y});
+    const Vector2 bottomRight = viewport_.screenToWorld(
+        {viewport_.canvas.x + viewport_.canvas.width, viewport_.canvas.y + viewport_.canvas.height});
+
+    const int minX = static_cast<int>(std::floor(std::min(topLeft.x, bottomRight.x)));
+    const int maxX = static_cast<int>(std::ceil(std::max(topLeft.x, bottomRight.x)));
+    const int minY = static_cast<int>(std::floor(std::min(topLeft.y, bottomRight.y)));
+    const int maxY = static_cast<int>(std::ceil(std::max(topLeft.y, bottomRight.y)));
+
+    BeginScissorMode(static_cast<int>(viewport_.canvas.x), static_cast<int>(viewport_.canvas.y),
+                     static_cast<int>(viewport_.canvas.width), static_cast<int>(viewport_.canvas.height));
+
+    const Color minorGrid = Fade(GRAY, 0.35F);
+    const Color axisGrid = Fade(GRAY, 0.65F);
+    for (int x = minX; x <= maxX; ++x) {
+        const Vector2 a = viewport_.worldToScreen({static_cast<float>(x), static_cast<float>(minY)});
+        const Vector2 b = viewport_.worldToScreen({static_cast<float>(x), static_cast<float>(maxY)});
+        DrawLineEx(a, b, 1.0F, x == 0 ? axisGrid : minorGrid);
+    }
+    for (int y = minY; y <= maxY; ++y) {
+        const Vector2 a = viewport_.worldToScreen({static_cast<float>(minX), static_cast<float>(y)});
+        const Vector2 b = viewport_.worldToScreen({static_cast<float>(maxX), static_cast<float>(y)});
+        DrawLineEx(a, b, 1.0F, y == 0 ? axisGrid : minorGrid);
+    }
+
+    EndScissorMode();
 }
 
 void WebApp::drawPanel() {
