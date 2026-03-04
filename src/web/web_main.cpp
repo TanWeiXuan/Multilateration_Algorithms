@@ -24,10 +24,10 @@ EM_JS(void, initMobileKeyboardProxy, (), {
     Module.__imguiMobileKeyboardInitialized = true;
 
     Module.__imguiWantMobileKeyboard = false;
-    const userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
-    const isMobileSafari = /iP(hone|ad|od)/.test(userAgent) && /WebKit/.test(userAgent) &&
-                           !/CriOS|FxiOS|EdgiOS/.test(userAgent);
-    Module.__imguiMobileManualForwarding = !isMobileSafari;
+    // Browsers already forward text input into the Emscripten event pipeline.
+    // Manually forwarding `input`/`keydown` events causes duplicate characters,
+    // so keep manual forwarding disabled consistently on every browser.
+    Module.__imguiMobileManualForwarding = false;
 
     let input = document.getElementById('imgui-mobile-keyboard-proxy');
     if (!input) {
