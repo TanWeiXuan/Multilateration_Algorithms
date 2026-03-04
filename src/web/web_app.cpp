@@ -56,7 +56,7 @@ void WebApp::handleViewportInput() {
     const Vector2 mouse = GetMousePosition();
     const bool overCanvas = CheckCollisionPointRec(mouse, viewport_.canvas);
     const ImGuiIO& io = ImGui::GetIO();
-    if (io.WantCaptureMouse) {
+    if (io.WantCaptureMouse || io.WantCaptureKeyboard || io.WantTextInput) {
         touchPanActive_ = false;
         touchPinchActive_ = false;
         return;
