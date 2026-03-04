@@ -128,6 +128,12 @@ void WebApp::handleViewportInput() {
 }
 
 void WebApp::drawScene() const {
+    const float screenWidth = static_cast<float>(GetScreenWidth());
+    const float screenHeight = static_cast<float>(GetScreenHeight());
+    const bool isMobilePortrait = screenWidth < 900.0F && screenHeight > screenWidth;
+    const int idLabelFontSize = isMobilePortrait ? 20 : 14;
+    const int altitudeLabelFontSize = isMobilePortrait ? 17 : 12;
+
     DrawRectangleRounded(viewport_.canvas, 0.02F, 1, Fade(LIGHTGRAY, 0.3F));
     drawGrid();
 
@@ -146,18 +152,19 @@ void WebApp::drawScene() const {
         const Vector2 w{static_cast<float>(anchor.position.x()), static_cast<float>(anchor.position.y())};
         const Vector2 s = viewport_.worldToScreen(w);
         DrawCircleV(s, 5.0F, BLUE);
-        DrawText(TextFormat("A%d", anchor.id), static_cast<int>(s.x - 8.0F), static_cast<int>(s.y + 8.0F), 14,
+        DrawText(TextFormat("A%d", anchor.id), static_cast<int>(s.x - 8.0F), static_cast<int>(s.y + 8.0F),
+                 idLabelFontSize,
                  DARKBLUE);
         DrawText(TextFormat("z=%.2f m", anchor.position.z()), static_cast<int>(s.x - 20.0F),
-                 static_cast<int>(s.y + 22.0F), 12, DARKGRAY);
+                 static_cast<int>(s.y + 22.0F), altitudeLabelFontSize, DARKGRAY);
     }
 
     const Vector2 gtW{static_cast<float>(params_.truePosition.x()), static_cast<float>(params_.truePosition.y())};
     const Vector2 gtS = viewport_.worldToScreen(gtW);
     DrawCircleV(gtS, 6.0F, GREEN);
-    DrawText("GT", static_cast<int>(gtS.x - 8.0F), static_cast<int>(gtS.y + 8.0F), 14, DARKGREEN);
+    DrawText("GT", static_cast<int>(gtS.x - 8.0F), static_cast<int>(gtS.y + 8.0F), idLabelFontSize, DARKGREEN);
     DrawText(TextFormat("z=%.2f m", params_.truePosition.z()), static_cast<int>(gtS.x - 20.0F),
-             static_cast<int>(gtS.y + 22.0F), 12, DARKGRAY);
+             static_cast<int>(gtS.y + 22.0F), altitudeLabelFontSize, DARKGRAY);
 }
 
 void WebApp::drawGrid() const {
@@ -194,10 +201,11 @@ void WebApp::drawPanel() {
     const ImVec2 workPos = mainViewport->WorkPos;
     const ImVec2 workSize = mainViewport->WorkSize;
     const bool isMobileLayout = workSize.x < 900.0F;
+    const bool isMobilePortrait = isMobileLayout && workSize.y > workSize.x;
     const float margin = 12.0F;
 
     ImGuiIO& io = ImGui::GetIO();
-    io.FontGlobalScale = isMobileLayout ? 1.2F : 1.0F;
+    io.FontGlobalScale = isMobilePortrait ? 1.45F : (isMobileLayout ? 1.2F : 1.0F);
 
     const float panelWidth = std::clamp(isMobileLayout ? 360.0F : 320.0F, 280.0F, workSize.x - margin * 2.0F);
     const float panelHeight = std::clamp(workSize.y * (isMobileLayout ? 0.72F : 0.65F), 360.0F,
