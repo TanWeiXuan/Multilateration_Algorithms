@@ -13,10 +13,17 @@ EM_JS(int, isMobileTouchDevice, (), {
             (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
 });
 
-EM_JS(void, syncMobileKeyboard, (int shouldShow), {
+EM_JS(void, initMobileKeyboardProxy, (), {
     if (typeof document === 'undefined') {
         return;
     }
+
+    if (Module.__imguiMobileKeyboardInitialized) {
+        return;
+    }
+    Module.__imguiMobileKeyboardInitialized = true;
+
+    Module.__imguiWantMobileKeyboard = false;
 
     let input = document.getElementById('imgui-mobile-keyboard-proxy');
     if (!input) {
@@ -38,19 +45,53 @@ EM_JS(void, syncMobileKeyboard, (int shouldShow), {
         document.body.appendChild(input);
     }
 
-    if (shouldShow) {
-        if (document.activeElement !== input) {
-            input.focus({preventScroll: true});
+    const focusFromGesture = () => {
+        if (!Module.__imguiWantMobileKeyboard) {
+            if (document.activeElement === input) {
+                input.blur();
+            }
+            return;
         }
+
+        if (document.activeElement !== input) {
+            try {
+                input.focus({preventScroll: true});
+            } catch (err) {
+                input.focus();
+            }
+        }
+    };
+
+    const events = ['pointerup', 'touchend'];
+    for (const eventName of events) {
+        Module.canvas.addEventListener(eventName, focusFromGesture, {passive: true});
+    }
+});
+
+EM_JS(void, setMobileKeyboardWanted, (int wanted), {
+    if (typeof document === 'undefined' || !Module.__imguiMobileKeyboardInitialized) {
         return;
     }
 
-    if (document.activeElement === input) {
-        input.blur();
+    Module.__imguiWantMobileKeyboard = !!wanted;
+
+    const input = document.getElementById('imgui-mobile-keyboard-proxy');
+    if (!input) {
+        return;
     }
 
-    if (Module && Module.canvas && document.activeElement !== Module.canvas) {
-        Module.canvas.focus({preventScroll: true});
+    if (!Module.__imguiWantMobileKeyboard) {
+        if (document.activeElement === input) {
+            input.blur();
+        }
+
+        if (Module.canvas && document.activeElement !== Module.canvas) {
+            try {
+                Module.canvas.focus({preventScroll: true});
+            } catch (err) {
+                Module.canvas.focus();
+            }
+        }
     }
 });
 #endif
@@ -62,13 +103,14 @@ bool gMobileKeyboardEnabled = false;
 #endif
 
 void frame() {
+    gApp->runFrame();
+
 #if defined(__EMSCRIPTEN__)
     if (gMobileKeyboardEnabled) {
         const ImGuiIO& io = ImGui::GetIO();
-        syncMobileKeyboard(io.WantTextInput ? 1 : 0);
+        setMobileKeyboardWanted(io.WantTextInput ? 1 : 0);
     }
 #endif
-    gApp->runFrame();
 }
 }  // namespace
 
@@ -83,6 +125,9 @@ int main() {
 
 #if defined(__EMSCRIPTEN__)
     gMobileKeyboardEnabled = isMobileTouchDevice() != 0;
+    if (gMobileKeyboardEnabled) {
+        initMobileKeyboardProxy();
+    }
     emscripten_set_main_loop(frame, 0, true);
 #else
     while (!WindowShouldClose()) {
