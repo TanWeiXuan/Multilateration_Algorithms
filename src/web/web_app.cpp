@@ -131,8 +131,8 @@ void WebApp::drawScene() const {
     const float screenWidth = static_cast<float>(GetScreenWidth());
     const float screenHeight = static_cast<float>(GetScreenHeight());
     const bool isMobilePortrait = screenWidth < 900.0F && screenHeight > screenWidth;
-    const int idLabelFontSize = isMobilePortrait ? 20 : 14;
-    const int altitudeLabelFontSize = isMobilePortrait ? 17 : 12;
+    const int idLabelFontSize = isMobilePortrait ? 28 : 14;
+    const int altitudeLabelFontSize = isMobilePortrait ? 24 : 12;
 
     DrawRectangleRounded(viewport_.canvas, 0.02F, 1, Fade(LIGHTGRAY, 0.3F));
     drawGrid();
@@ -205,7 +205,7 @@ void WebApp::drawPanel() {
     const float margin = 12.0F;
 
     ImGuiIO& io = ImGui::GetIO();
-    io.FontGlobalScale = isMobilePortrait ? 1.45F : (isMobileLayout ? 1.2F : 1.0F);
+    io.FontGlobalScale = isMobilePortrait ? 2.00F : (isMobileLayout ? 1.4F : 1.0F);
 
     const float panelWidth = std::clamp(isMobileLayout ? 360.0F : 320.0F, 280.0F, workSize.x - margin * 2.0F);
     const float panelHeight = std::clamp(workSize.y * (isMobileLayout ? 0.72F : 0.65F), 360.0F,
