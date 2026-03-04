@@ -34,7 +34,7 @@ EM_JS(void, initMobileKeyboardProxy, (), {
         input.autocomplete = 'off';
         input.autocorrect = 'off';
         input.spellcheck = false;
-        input.setAttribute('inputmode', 'decimal');
+        input.setAttribute('inputmode', 'text');
         input.style.position = 'fixed';
         input.style.left = '-1000px';
         input.style.top = '-1000px';
@@ -44,6 +44,41 @@ EM_JS(void, initMobileKeyboardProxy, (), {
         input.style.pointerEvents = 'none';
         document.body.appendChild(input);
     }
+
+    const dispatchImGuiChar = (text) => {
+        if (typeof text !== 'string' || text.length === 0) {
+            return;
+        }
+        Module.ccall('imgui_mobile_add_input_characters_utf8', null, ['string'], [text]);
+    };
+
+    input.addEventListener('input', (event) => {
+        if (!Module.__imguiWantMobileKeyboard) {
+            return;
+        }
+
+        if (event && event.inputType === 'deleteContentBackward') {
+            Module.ccall('imgui_mobile_send_backspace', null, [], []);
+        } else if (event && typeof event.data === 'string' && event.data.length > 0) {
+            dispatchImGuiChar(event.data);
+        }
+
+        input.value = '';
+    });
+
+    input.addEventListener('keydown', (event) => {
+        if (!Module.__imguiWantMobileKeyboard) {
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            Module.ccall('imgui_mobile_send_enter', null, [], []);
+            event.preventDefault();
+        } else if (event.key === 'Escape') {
+            Module.ccall('imgui_mobile_send_escape', null, [], []);
+            event.preventDefault();
+        }
+    });
 
     const focusFromGesture = () => {
         if (!Module.__imguiWantMobileKeyboard) {
@@ -62,7 +97,7 @@ EM_JS(void, initMobileKeyboardProxy, (), {
         }
     };
 
-    const events = ['pointerup', 'touchend'];
+    const events = ['pointerup'];
     for (const eventName of events) {
         Module.canvas.addEventListener(eventName, focusFromGesture, {passive: true});
     }
@@ -100,6 +135,33 @@ namespace {
 WebApp* gApp = nullptr;
 #if defined(__EMSCRIPTEN__)
 bool gMobileKeyboardEnabled = false;
+
+extern "C" {
+EMSCRIPTEN_KEEPALIVE void imgui_mobile_add_input_characters_utf8(const char* text) {
+    if (!text || !text[0]) {
+        return;
+    }
+    ImGui::GetIO().AddInputCharactersUTF8(text);
+}
+
+EMSCRIPTEN_KEEPALIVE void imgui_mobile_send_backspace() {
+    ImGuiIO& io = ImGui::GetIO();
+    io.AddKeyEvent(ImGuiKey_Backspace, true);
+    io.AddKeyEvent(ImGuiKey_Backspace, false);
+}
+
+EMSCRIPTEN_KEEPALIVE void imgui_mobile_send_enter() {
+    ImGuiIO& io = ImGui::GetIO();
+    io.AddKeyEvent(ImGuiKey_Enter, true);
+    io.AddKeyEvent(ImGuiKey_Enter, false);
+}
+
+EMSCRIPTEN_KEEPALIVE void imgui_mobile_send_escape() {
+    ImGuiIO& io = ImGui::GetIO();
+    io.AddKeyEvent(ImGuiKey_Escape, true);
+    io.AddKeyEvent(ImGuiKey_Escape, false);
+}
+}
 #endif
 
 void frame() {
