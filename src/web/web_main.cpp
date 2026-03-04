@@ -24,6 +24,10 @@ EM_JS(void, initMobileKeyboardProxy, (), {
     Module.__imguiMobileKeyboardInitialized = true;
 
     Module.__imguiWantMobileKeyboard = false;
+    const userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
+    const isMobileSafari = /iP(hone|ad|od)/.test(userAgent) && /WebKit/.test(userAgent) &&
+                           !/CriOS|FxiOS|EdgiOS/.test(userAgent);
+    Module.__imguiMobileManualForwarding = !isMobileSafari;
 
     let input = document.getElementById('imgui-mobile-keyboard-proxy');
     if (!input) {
@@ -53,7 +57,8 @@ EM_JS(void, initMobileKeyboardProxy, (), {
     };
 
     input.addEventListener('input', (event) => {
-        if (!Module.__imguiWantMobileKeyboard) {
+        if (!Module.__imguiWantMobileKeyboard || !Module.__imguiMobileManualForwarding) {
+            input.value = '';
             return;
         }
 
@@ -67,7 +72,7 @@ EM_JS(void, initMobileKeyboardProxy, (), {
     });
 
     input.addEventListener('keydown', (event) => {
-        if (!Module.__imguiWantMobileKeyboard) {
+        if (!Module.__imguiWantMobileKeyboard || !Module.__imguiMobileManualForwarding) {
             return;
         }
 
