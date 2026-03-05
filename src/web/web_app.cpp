@@ -135,8 +135,8 @@ void WebApp::handleViewportInput() {
 
 void WebApp::drawScene() const {
     const bool isMobilePortrait = frameMetrics_.touchDevice && frameMetrics_.cssWidth < 600.0F && frameMetrics_.cssHeight > frameMetrics_.cssWidth;
-    const int idLabelFontSize = isMobilePortrait ? 28 : 14;
-    const int altitudeLabelFontSize = isMobilePortrait ? 24 : 12;
+    const int idLabelFontSize = isMobilePortrait ? 22 : 14;
+    const int altitudeLabelFontSize = isMobilePortrait ? 18 : 12;
 
     DrawRectangleRounded(viewport_.canvas, 0.02F, 1, Fade(LIGHTGRAY, 0.3F));
     drawGrid();
@@ -215,19 +215,19 @@ float WebApp::computeUiScale() const {
     if (cssWidth < 600.0F && isPortrait) {
         if (shortestCssEdge < 380.0F) {
             uiScaleTierLabel_ = "touch-phone-portrait-xl";
-            return 2.4F;
+            return 1.4F;
         }
         uiScaleTierLabel_ = "touch-phone-portrait";
-        return 2.0F;
+        return 1.28F;
     }
 
     if (shortestCssEdge < 900.0F) {
         uiScaleTierLabel_ = "touch-tablet-or-landscape";
-        return 1.5F;
+        return 1.15F;
     }
 
     uiScaleTierLabel_ = "touch-large";
-    return 1.35F;
+    return 1.1F;
 }
 
 void WebApp::applyUiScale(float scale) {
@@ -255,22 +255,22 @@ void WebApp::drawPanel() {
     const float uiScale = computeUiScale();
     applyUiScale(uiScale);
 
-    const float margin = 12.0F * uiScale;
+    const float margin = isMobileLayout ? 12.0F : 14.0F;
     const float layoutWidth = cssWidth;
     const float layoutHeight = cssHeight;
 
-    const float panelWidth = std::clamp((isMobileLayout ? 360.0F : 320.0F) * uiScale, 280.0F * uiScale,
+    const float panelWidth = std::clamp(isMobileLayout ? 340.0F : 320.0F, 280.0F,
                                         layoutWidth - margin * 2.0F);
-    const float panelHeight = std::clamp(layoutHeight * (isMobileLayout ? 0.78F : 0.65F), 360.0F * uiScale,
+    const float panelHeight = std::clamp(layoutHeight * (isMobileLayout ? 0.74F : 0.65F), 340.0F,
                                          layoutHeight - margin * 2.0F);
     const ImVec2 panelDefaultSize{panelWidth, panelHeight};
 
-    const ImVec2 minPanelSize = ImVec2{280.0F * uiScale, 360.0F * uiScale};
+    const ImVec2 minPanelSize = ImVec2{280.0F, 340.0F};
     const ImVec2 maxPanelSize = ImVec2{std::max(minPanelSize.x, layoutWidth - margin * 2.0F),
                                        std::max(minPanelSize.y, layoutHeight - margin * 2.0F)};
 
     const bool mobilePortrait = isMobileLayout && cssHeight >= cssWidth;
-    const bool anchorRight = !mobilePortrait;
+    const bool anchorRight = true;
     const ImVec2 panelAnchor = anchorRight ? ImVec2{1.0F, 0.0F} : ImVec2{0.0F, 0.0F};
     const float panelPosX = anchorRight ? layoutWidth - margin : margin;
     const ImVec2 panelPos{panelPosX, margin};
