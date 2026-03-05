@@ -175,8 +175,8 @@ void syncCanvasToViewport() {
     }
 
     const double dpr = std::max(1.0, getDevicePixelRatio());
-    const int pixelWidth = std::max(1, static_cast<int>(std::lround(cssWidth * dpr)));
-    const int pixelHeight = std::max(1, static_cast<int>(std::lround(cssHeight * dpr)));
+    const int pixelWidth = std::max(1, static_cast<int>(std::lround(cssWidth)));
+    const int pixelHeight = std::max(1, static_cast<int>(std::lround(cssHeight)));
 
     emscripten_set_canvas_element_size("#canvas", pixelWidth, pixelHeight);
     SetWindowSize(pixelWidth, pixelHeight);
