@@ -4,13 +4,24 @@
 #include "web_app.h"
 
 #if defined(__EMSCRIPTEN__)
+#include <algorithm>
+#include <cmath>
+
 #include <emscripten/emscripten.h>
+#include <emscripten/html5.h>
 #include <imgui.h>
 
 EM_JS(int, isMobileTouchDevice, (), {
     return (typeof window !== 'undefined') &&
            (('ontouchstart' in window) ||
             (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
+});
+
+EM_JS(double, getDevicePixelRatio, (), {
+    if (typeof window === 'undefined' || !window.devicePixelRatio) {
+        return 1.0;
+    }
+    return window.devicePixelRatio;
 });
 
 EM_JS(void, initMobileKeyboardProxy, (), {
@@ -141,6 +152,39 @@ WebApp* gApp = nullptr;
 #if defined(__EMSCRIPTEN__)
 bool gMobileKeyboardEnabled = false;
 
+void syncCanvasToViewport() {
+    double cssWidth = 0.0;
+    double cssHeight = 0.0;
+    if (emscripten_get_element_css_size("#canvas", &cssWidth, &cssHeight) != EMSCRIPTEN_RESULT_SUCCESS || cssWidth <= 0.0 ||
+        cssHeight <= 0.0) {
+        return;
+    }
+
+    const double dpr = std::max(1.0, getDevicePixelRatio());
+    const int pixelWidth = std::max(1, static_cast<int>(std::lround(cssWidth * dpr)));
+    const int pixelHeight = std::max(1, static_cast<int>(std::lround(cssHeight * dpr)));
+
+    emscripten_set_canvas_element_size("#canvas", pixelWidth, pixelHeight);
+    SetWindowSize(pixelWidth, pixelHeight);
+}
+
+EM_BOOL onCanvasResize(int, const EmscriptenUiEvent*, void*) {
+    syncCanvasToViewport();
+    return EM_TRUE;
+}
+
+EM_BOOL onCanvasOrientationChange(int, const EmscriptenOrientationChangeEvent*, void*) {
+    syncCanvasToViewport();
+    return EM_TRUE;
+}
+
+void installViewportResizeHandlers() {
+    syncCanvasToViewport();
+    emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, onCanvasResize);
+    emscripten_set_orientationchange_callback(EMSCRIPTEN_EVENT_TARGET_SCREEN, nullptr, EM_FALSE,
+                                              onCanvasOrientationChange);
+}
+
 extern "C" {
 EMSCRIPTEN_KEEPALIVE void imgui_mobile_add_input_characters_utf8(const char* text) {
     if (!text || !text[0]) {
@@ -195,6 +239,7 @@ int main() {
     if (gMobileKeyboardEnabled) {
         initMobileKeyboardProxy();
     }
+    installViewportResizeHandlers();
     emscripten_set_main_loop(frame, 0, true);
 #else
     while (!WindowShouldClose()) {
