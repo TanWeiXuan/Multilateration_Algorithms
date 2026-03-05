@@ -319,19 +319,19 @@ void WebApp::drawPanel() {
     }
 
     if (ImGui::CollapsingHeader("Test Parameter Configuration", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::InputDouble("rangeNoiseStdDev", &params_.rangeNoiseStdDev, 0.01, 0.1, "%.3f");
+        ImGui::InputDouble("Range Std Dev (m)", &params_.rangeNoiseStdDev, 0.01, 0.1, "%.3f");
         double rangeOutlierPercentage = params_.rangeOutlierRatio * 100.0;
-        if (ImGui::InputDouble("rangeOutlierRatio", &rangeOutlierPercentage, 0.1, 1.0, "%.1f%%")) {
+        if (ImGui::InputDouble("Range Outlier Percentage", &rangeOutlierPercentage, 0.1, 1.0, "%.1f%%")) {
             rangeOutlierPercentage = std::clamp(rangeOutlierPercentage, 0.0, 100.0);
             params_.rangeOutlierRatio = rangeOutlierPercentage / 100.0;
         }
         params_.rangeOutlierRatio = std::clamp(params_.rangeOutlierRatio, 0.0, 1.0);
-        if (ImGui::InputDouble("rangeOutlierMagnitude", &params_.rangeOutlierMagnitude)) {
+        if (ImGui::InputDouble("Range Outlier Magnitude (m)", &params_.rangeOutlierMagnitude)) {
             params_.rangeOutlierMagnitude = std::max(params_.rangeOutlierMagnitude, 0.0);
         }
-        ImGui::InputDouble("anchorPosNoiseStdDev", &params_.anchorPosNoiseStdDev);
+        ImGui::InputDouble("Anchor Pos Std Dev", &params_.anchorPosNoiseStdDev);
         int numRuns = static_cast<int>(params_.numRuns);
-        ImGui::InputInt("numRuns", &numRuns);
+        ImGui::InputInt("Number of Runs", &numRuns);
         params_.numRuns = static_cast<size_t>(std::max(1, numRuns));
 
         bool fixedSeed = params_.randomSeed.has_value();
