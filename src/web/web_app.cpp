@@ -29,6 +29,12 @@ WebApp::WebApp() {
 }
 
 void WebApp::runFrame() {
+    frameMetrics_ = getWebViewportMetrics();
+    if (frameMetrics_.cssWidth <= 0.0F || frameMetrics_.cssHeight <= 0.0F) {
+        frameMetrics_.cssWidth = static_cast<float>(GetScreenWidth());
+        frameMetrics_.cssHeight = static_cast<float>(GetScreenHeight());
+    }
+
     viewport_.canvas = {0.0F, 0.0F, static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())};
 
     if (fitRequested_) {
@@ -128,9 +134,7 @@ void WebApp::handleViewportInput() {
 }
 
 void WebApp::drawScene() const {
-    const float screenWidth = static_cast<float>(GetScreenWidth());
-    const float screenHeight = static_cast<float>(GetScreenHeight());
-    const bool isMobilePortrait = screenWidth < 900.0F && screenHeight > screenWidth;
+    const bool isMobilePortrait = frameMetrics_.touchDevice && frameMetrics_.cssWidth < 600.0F && frameMetrics_.cssHeight > frameMetrics_.cssWidth;
     const int idLabelFontSize = isMobilePortrait ? 28 : 14;
     const int altitudeLabelFontSize = isMobilePortrait ? 24 : 12;
 
@@ -196,24 +200,34 @@ void WebApp::drawGrid() const {
     EndScissorMode();
 }
 
-
 float WebApp::computeUiScale() const {
-    const ImGuiIO& io = ImGui::GetIO();
-    const float framebufferScaleX = io.DisplayFramebufferScale.x > 0.0F ? io.DisplayFramebufferScale.x : 1.0F;
-    const float framebufferScaleY = io.DisplayFramebufferScale.y > 0.0F ? io.DisplayFramebufferScale.y : 1.0F;
-    const float cssWidth = io.DisplaySize.x / framebufferScaleX;
-    const float cssHeight = io.DisplaySize.y / framebufferScaleY;
-    const float shortestCssEdge = std::max(1.0F, std::min(cssWidth, cssHeight));
+    const bool isTouchDevice = frameMetrics_.touchDevice;
+    const float cssWidth = std::max(1.0F, frameMetrics_.cssWidth);
+    const float cssHeight = std::max(1.0F, frameMetrics_.cssHeight);
+    const bool isPortrait = cssHeight > cssWidth;
+    const float shortestCssEdge = std::min(cssWidth, cssHeight);
 
-    // On web/mobile we render into a larger backing buffer for sharper output,
-    // so scaling only by framebuffer pixels makes touch widgets too small.
-    if (shortestCssEdge < 520.0F) {
+    if (!isTouchDevice) {
+        uiScaleTierLabel_ = "desktop";
+        return 1.0F;
+    }
+
+    if (cssWidth < 600.0F && isPortrait) {
+        if (shortestCssEdge < 380.0F) {
+            uiScaleTierLabel_ = "touch-phone-portrait-xl";
+            return 2.4F;
+        }
+        uiScaleTierLabel_ = "touch-phone-portrait";
         return 2.0F;
     }
-    if (shortestCssEdge < 820.0F) {
+
+    if (shortestCssEdge < 900.0F) {
+        uiScaleTierLabel_ = "touch-tablet-or-landscape";
         return 1.5F;
     }
-    return 1.0F;
+
+    uiScaleTierLabel_ = "touch-large";
+    return 1.35F;
 }
 
 void WebApp::applyUiScale(float scale) {
@@ -235,30 +249,45 @@ void WebApp::applyUiScale(float scale) {
 }
 
 void WebApp::drawPanel() {
-    const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
-    const ImVec2 workPos = mainViewport->WorkPos;
-    const ImVec2 workSize = mainViewport->WorkSize;
-    const bool isMobileLayout = workSize.x < 900.0F;
+    const float cssWidth = std::max(1.0F, frameMetrics_.cssWidth);
+    const float cssHeight = std::max(1.0F, frameMetrics_.cssHeight);
+    const bool isMobileLayout = frameMetrics_.touchDevice && cssWidth < 900.0F;
     const float uiScale = computeUiScale();
     applyUiScale(uiScale);
-    const float margin = 12.0F * uiScale;
 
-    const float panelWidth = std::clamp((isMobileLayout ? 360.0F : 320.0F) * uiScale, 280.0F * uiScale, workSize.x - margin * 2.0F);
-    const float panelHeight = std::clamp(workSize.y * (isMobileLayout ? 0.72F : 0.65F), 360.0F * uiScale,
-                                         workSize.y - margin * 2.0F);
+    const float margin = 12.0F * uiScale;
+    const float layoutWidth = cssWidth;
+    const float layoutHeight = cssHeight;
+
+    const float panelWidth = std::clamp((isMobileLayout ? 360.0F : 320.0F) * uiScale, 280.0F * uiScale,
+                                        layoutWidth - margin * 2.0F);
+    const float panelHeight = std::clamp(layoutHeight * (isMobileLayout ? 0.78F : 0.65F), 360.0F * uiScale,
+                                         layoutHeight - margin * 2.0F);
     const ImVec2 panelDefaultSize{panelWidth, panelHeight};
 
     const ImVec2 minPanelSize = ImVec2{280.0F * uiScale, 360.0F * uiScale};
-    const ImVec2 maxPanelSize = ImVec2{std::max(minPanelSize.x, workSize.x - margin * 2.0F),
-                                       std::max(minPanelSize.y, workSize.y - margin * 2.0F)};
+    const ImVec2 maxPanelSize = ImVec2{std::max(minPanelSize.x, layoutWidth - margin * 2.0F),
+                                       std::max(minPanelSize.y, layoutHeight - margin * 2.0F)};
 
     ImGui::SetNextWindowSizeConstraints(minPanelSize, maxPanelSize);
-
-    ImGui::SetNextWindowPos({workPos.x + workSize.x - margin, workPos.y + margin}, ImGuiCond_Always,
-                            ImVec2{1.0F, 0.0F});
+    ImGui::SetNextWindowPos({layoutWidth - margin, margin}, ImGuiCond_Always, ImVec2{1.0F, 0.0F});
     ImGui::SetNextWindowSize(panelDefaultSize, ImGuiCond_FirstUseEver);
 
     ImGui::Begin("Multilateration Controls", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+
+    if (ImGui::Button(showUiDebugInfo_ ? "Hide UI Debug" : "Show UI Debug")) {
+        showUiDebugInfo_ = !showUiDebugInfo_;
+    }
+
+    if (showUiDebugInfo_) {
+        ImGui::SeparatorText("UI Debug Metrics");
+        ImGui::Text("CSS viewport: %.0f x %.0f", frameMetrics_.cssWidth, frameMetrics_.cssHeight);
+        ImGui::Text("Framebuffer: %.0f x %.0f", frameMetrics_.framebufferWidth, frameMetrics_.framebufferHeight);
+        ImGui::Text("DPR: %.2f", frameMetrics_.devicePixelRatio);
+        ImGui::Text("Touch device: %s", frameMetrics_.touchDevice ? "yes" : "no");
+        ImGui::Text("UI scale tier: %s (%.2f)", uiScaleTierLabel_, uiScale);
+        ImGui::Separator();
+    }
 
     if (ImGui::CollapsingHeader("Anchor and GT Configuration", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::Button("Add Anchor")) {
