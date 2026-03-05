@@ -69,7 +69,7 @@ EM_JS(void, initMobileKeyboardProxy, (), {
 
     input.addEventListener('input', (event) => {
         if (!Module.__imguiWantMobileKeyboard || !Module.__imguiMobileManualForwarding) {
-            input.value = '';
+            input.value = "";
             return;
         }
 
@@ -79,7 +79,7 @@ EM_JS(void, initMobileKeyboardProxy, (), {
             dispatchImGuiChar(event.data);
         }
 
-        input.value = '';
+        input.value = "";
     });
 
     input.addEventListener('keydown', (event) => {
@@ -181,8 +181,7 @@ EM_BOOL onCanvasOrientationChange(int, const EmscriptenOrientationChangeEvent*, 
 void installViewportResizeHandlers() {
     syncCanvasToViewport();
     emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, onCanvasResize);
-    emscripten_set_orientationchange_callback(EMSCRIPTEN_EVENT_TARGET_SCREEN, nullptr, EM_FALSE,
-                                              onCanvasOrientationChange);
+    emscripten_set_orientationchange_callback(nullptr, EM_FALSE, onCanvasOrientationChange);
 }
 
 extern "C" {
