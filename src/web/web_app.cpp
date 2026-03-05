@@ -24,7 +24,7 @@ WebApp::WebApp() {
         anchors_.push_back({static_cast<int>(i), params_.anchorPositions[i]});
     }
 
-    params_.rangeNoiseStdDev = 0.25;
+    params_.rangeNoiseStdDev = 0.05;
     params_.numRuns = 2000;
 }
 
@@ -135,8 +135,8 @@ void WebApp::handleViewportInput() {
 
 void WebApp::drawScene() const {
     const bool isMobilePortrait = frameMetrics_.touchDevice && frameMetrics_.cssWidth < 600.0F && frameMetrics_.cssHeight > frameMetrics_.cssWidth;
-    const int idLabelFontSize = isMobilePortrait ? 20 : 14;
-    const int altitudeLabelFontSize = isMobilePortrait ? 16 : 12;
+    const int idLabelFontSize = isMobilePortrait ? 18 : 14;
+    const int altitudeLabelFontSize = isMobilePortrait ? 14 : 12;
 
     DrawRectangleRounded(viewport_.canvas, 0.02F, 1, Fade(LIGHTGRAY, 0.3F));
     drawGrid();
@@ -215,10 +215,10 @@ float WebApp::computeUiScale() const {
     if (cssWidth < 600.0F && isPortrait) {
         if (shortestCssEdge < 380.0F) {
             uiScaleTierLabel_ = "touch-phone-portrait-xl";
-            return 1.10F;
+            return 1.0F;
         }
         uiScaleTierLabel_ = "touch-phone-portrait";
-        return 1.05F;
+        return 0.90F;
     }
 
     if (shortestCssEdge < 900.0F) {
@@ -255,7 +255,7 @@ void WebApp::drawPanel() {
     const float uiScale = computeUiScale();
     applyUiScale(uiScale);
 
-    const float margin = isMobileLayout ? 12.0F : 14.0F;
+    const float margin = isMobileLayout ? 6.0F : 8.0F;
     const float layoutWidth = cssWidth;
     const float layoutHeight = cssHeight;
 
