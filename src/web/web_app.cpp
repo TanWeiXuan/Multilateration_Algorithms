@@ -196,23 +196,59 @@ void WebApp::drawGrid() const {
     EndScissorMode();
 }
 
+
+float WebApp::computeUiScale() const {
+    const ImGuiIO& io = ImGui::GetIO();
+    const float framebufferScaleX = io.DisplayFramebufferScale.x > 0.0F ? io.DisplayFramebufferScale.x : 1.0F;
+    const float framebufferScaleY = io.DisplayFramebufferScale.y > 0.0F ? io.DisplayFramebufferScale.y : 1.0F;
+    const float cssWidth = io.DisplaySize.x / framebufferScaleX;
+    const float cssHeight = io.DisplaySize.y / framebufferScaleY;
+    const float shortestCssEdge = std::max(1.0F, std::min(cssWidth, cssHeight));
+
+    // On web/mobile we render into a larger backing buffer for sharper output,
+    // so scaling only by framebuffer pixels makes touch widgets too small.
+    if (shortestCssEdge < 520.0F) {
+        return 2.0F;
+    }
+    if (shortestCssEdge < 820.0F) {
+        return 1.5F;
+    }
+    return 1.0F;
+}
+
+void WebApp::applyUiScale(float scale) {
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (!baseStyleCaptured_) {
+        baseStyle_ = style;
+        baseStyleCaptured_ = true;
+    }
+
+    if (std::fabs(appliedUiScale_ - scale) < 0.01F) {
+        return;
+    }
+
+    style = baseStyle_;
+    style.ScaleAllSizes(scale);
+    io.FontGlobalScale = scale;
+    appliedUiScale_ = scale;
+}
+
 void WebApp::drawPanel() {
     const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
     const ImVec2 workPos = mainViewport->WorkPos;
     const ImVec2 workSize = mainViewport->WorkSize;
     const bool isMobileLayout = workSize.x < 900.0F;
-    const bool isMobilePortrait = isMobileLayout && workSize.y > workSize.x;
-    const float margin = 12.0F;
+    const float uiScale = computeUiScale();
+    applyUiScale(uiScale);
+    const float margin = 12.0F * uiScale;
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.FontGlobalScale = isMobilePortrait ? 2.00F : (isMobileLayout ? 1.4F : 1.0F);
-
-    const float panelWidth = std::clamp(isMobileLayout ? 360.0F : 320.0F, 280.0F, workSize.x - margin * 2.0F);
-    const float panelHeight = std::clamp(workSize.y * (isMobileLayout ? 0.72F : 0.65F), 360.0F,
+    const float panelWidth = std::clamp((isMobileLayout ? 360.0F : 320.0F) * uiScale, 280.0F * uiScale, workSize.x - margin * 2.0F);
+    const float panelHeight = std::clamp(workSize.y * (isMobileLayout ? 0.72F : 0.65F), 360.0F * uiScale,
                                          workSize.y - margin * 2.0F);
     const ImVec2 panelDefaultSize{panelWidth, panelHeight};
 
-    const ImVec2 minPanelSize = ImVec2{280.0F, 360.0F};
+    const ImVec2 minPanelSize = ImVec2{280.0F * uiScale, 360.0F * uiScale};
     const ImVec2 maxPanelSize = ImVec2{std::max(minPanelSize.x, workSize.x - margin * 2.0F),
                                        std::max(minPanelSize.y, workSize.y - margin * 2.0F)};
 

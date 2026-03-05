@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <Eigen/Dense>
+#include <imgui.h>
 #include <raylib.h>
 
 #include "../core/simulation_runner.h"
@@ -23,6 +24,8 @@ class WebApp {
     void drawScene() const;
     void drawGrid() const;
     void drawPanel();
+    float computeUiScale() const;
+    void applyUiScale(float scale);
     void fitView();
 
     std::vector<Anchor> anchors_;
@@ -37,4 +40,7 @@ class WebApp {
     Vector2 lastTouchPosition_ = {0.0F, 0.0F};
     Vector2 lastTouchMidpoint_ = {0.0F, 0.0F};
     float lastTouchDistance_ = 0.0F;
+    ImGuiStyle baseStyle_{};
+    float appliedUiScale_ = 1.0F;
+    bool baseStyleCaptured_ = false;
 };
