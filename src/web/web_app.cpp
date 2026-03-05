@@ -218,7 +218,7 @@ float WebApp::computeUiScale() const {
             return 1.0F;
         }
         uiScaleTierLabel_ = "touch-phone-portrait";
-        return 0.90F;
+        return 1.00F;
     }
 
     if (shortestCssEdge < 900.0F) {
