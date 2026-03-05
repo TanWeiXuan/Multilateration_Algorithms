@@ -8,6 +8,7 @@
 
 #include "../core/simulation_runner.h"
 #include "viewport2d.h"
+#include "web_platform.h"
 
 struct Anchor {
     int id = 0;
@@ -43,4 +44,7 @@ class WebApp {
     ImGuiStyle baseStyle_{};
     float appliedUiScale_ = 1.0F;
     bool baseStyleCaptured_ = false;
+    mutable const char* uiScaleTierLabel_ = "desktop";
+    bool showUiDebugInfo_ = true;
+    WebViewportMetrics frameMetrics_{};
 };

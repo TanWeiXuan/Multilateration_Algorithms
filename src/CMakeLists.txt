@@ -70,6 +70,7 @@ if(MULTILAT_BUILD_WEBAPP)
     add_executable(multilat_web
         ${CMAKE_CURRENT_SOURCE_DIR}/web/web_main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/web/web_app.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/web/web_platform.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/web/viewport2d.cpp
     )
     target_include_directories(multilat_web PRIVATE

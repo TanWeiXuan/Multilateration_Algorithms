@@ -2,6 +2,7 @@
 #include <rlImGui.h>
 
 #include "web_app.h"
+#include "web_platform.h"
 
 #if defined(__EMSCRIPTEN__)
 #include <algorithm>
@@ -22,6 +23,20 @@ EM_JS(double, getDevicePixelRatio, (), {
         return 1.0;
     }
     return window.devicePixelRatio;
+});
+
+EM_JS(double, getViewportInnerWidth, (), {
+    if (typeof window === 'undefined' || typeof window.innerWidth !== 'number') {
+        return 0.0;
+    }
+    return window.innerWidth;
+});
+
+EM_JS(double, getViewportInnerHeight, (), {
+    if (typeof window === 'undefined' || typeof window.innerHeight !== 'number') {
+        return 0.0;
+    }
+    return window.innerHeight;
 });
 
 EM_JS(void, initMobileKeyboardProxy, (), {
@@ -153,10 +168,9 @@ WebApp* gApp = nullptr;
 bool gMobileKeyboardEnabled = false;
 
 void syncCanvasToViewport() {
-    double cssWidth = 0.0;
-    double cssHeight = 0.0;
-    if (emscripten_get_element_css_size("#canvas", &cssWidth, &cssHeight) != EMSCRIPTEN_RESULT_SUCCESS || cssWidth <= 0.0 ||
-        cssHeight <= 0.0) {
+    const double cssWidth = getViewportInnerWidth();
+    const double cssHeight = getViewportInnerHeight();
+    if (cssWidth <= 0.0 || cssHeight <= 0.0) {
         return;
     }
 
@@ -166,6 +180,15 @@ void syncCanvasToViewport() {
 
     emscripten_set_canvas_element_size("#canvas", pixelWidth, pixelHeight);
     SetWindowSize(pixelWidth, pixelHeight);
+
+    updateWebViewportMetrics({
+        static_cast<float>(cssWidth),
+        static_cast<float>(cssHeight),
+        static_cast<float>(pixelWidth),
+        static_cast<float>(pixelHeight),
+        static_cast<float>(dpr),
+        isMobileTouchDevice() != 0,
+    });
 }
 
 EM_BOOL onCanvasResize(int, const EmscriptenUiEvent*, void*) {
