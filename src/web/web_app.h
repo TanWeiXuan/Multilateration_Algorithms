@@ -45,6 +45,6 @@ class WebApp {
     float appliedUiScale_ = 1.0F;
     bool baseStyleCaptured_ = false;
     mutable const char* uiScaleTierLabel_ = "desktop";
-    bool showUiDebugInfo_ = true;
+    bool showUiDebugInfo_ = false;
     WebViewportMetrics frameMetrics_{};
 };

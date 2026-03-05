@@ -215,10 +215,10 @@ float WebApp::computeUiScale() const {
     if (cssWidth < 600.0F && isPortrait) {
         if (shortestCssEdge < 380.0F) {
             uiScaleTierLabel_ = "touch-phone-portrait-xl";
-            return 1.4F;
+            return 1.28F;
         }
         uiScaleTierLabel_ = "touch-phone-portrait";
-        return 1.28F;
+        return 1.2F;
     }
 
     if (shortestCssEdge < 900.0F) {
@@ -259,21 +259,19 @@ void WebApp::drawPanel() {
     const float layoutWidth = cssWidth;
     const float layoutHeight = cssHeight;
 
-    const float panelWidth = std::clamp(isMobileLayout ? 340.0F : 320.0F, 280.0F,
+    const float panelWidth = std::clamp(isMobileLayout ? 300.0F : 280.0F, 240.0F,
                                         layoutWidth - margin * 2.0F);
-    const float panelHeight = std::clamp(layoutHeight * (isMobileLayout ? 0.74F : 0.65F), 340.0F,
+    const float panelHeight = std::clamp(layoutHeight * (isMobileLayout ? 0.60F : 0.52F), 280.0F,
                                          layoutHeight - margin * 2.0F);
     const ImVec2 panelDefaultSize{panelWidth, panelHeight};
 
-    const ImVec2 minPanelSize = ImVec2{280.0F, 340.0F};
+    const ImVec2 minPanelSize = ImVec2{240.0F, 280.0F};
     const ImVec2 maxPanelSize = ImVec2{std::max(minPanelSize.x, layoutWidth - margin * 2.0F),
                                        std::max(minPanelSize.y, layoutHeight - margin * 2.0F)};
 
     const bool mobilePortrait = isMobileLayout && cssHeight >= cssWidth;
-    const bool anchorRight = true;
-    const ImVec2 panelAnchor = anchorRight ? ImVec2{1.0F, 0.0F} : ImVec2{0.0F, 0.0F};
-    const float panelPosX = anchorRight ? layoutWidth - margin : margin;
-    const ImVec2 panelPos{panelPosX, margin};
+    const ImVec2 panelAnchor{0.0F, 0.0F};
+    const ImVec2 panelPos{margin, margin};
     const ImGuiCond panelPosCondition = mobilePortrait ? ImGuiCond_Always : ImGuiCond_FirstUseEver;
 
     ImGui::SetNextWindowSizeConstraints(minPanelSize, maxPanelSize);
