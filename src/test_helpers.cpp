@@ -199,30 +199,50 @@ TrueRangeMultilateration::TestResults computeResults(
 )
 {
     TrueRangeMultilateration::TestResults results;
-    
-    Eigen::Vector3d err = Eigen::Vector3d::Zero();
-    Eigen::Vector3d maxErr = Eigen::Vector3d::Zero();
-    
-    for(const Eigen::Vector3d& estPos : estimatedPositions)
+
+    if (estimatedPositions.empty())
     {
-        Eigen::Vector3d diff = estPos - params.truePosition;
-        err += diff.cwiseAbs();
-        
-        // Track maximum error in each axis
-        maxErr = maxErr.cwiseMax(diff.cwiseAbs());
+        return results;
     }
-    err /= static_cast<double>(estimatedPositions.size());
 
-    Eigen::Matrix3d errCov = Eigen::Matrix3d::Zero();
-    for (const auto& estPos : estimatedPositions) {
-        Eigen::Vector3d diff = (estPos - params.truePosition) - err;
-        errCov += diff * diff.transpose();
+    Eigen::Vector3d meanSignedError = Eigen::Vector3d::Zero();
+    Eigen::Vector3d meanAbsError = Eigen::Vector3d::Zero();
+    Eigen::Vector3d maxError = Eigen::Vector3d::Zero();
+
+    for (const Eigen::Vector3d& estPos : estimatedPositions)
+    {
+        const Eigen::Vector3d error = estPos - params.truePosition;
+        const Eigen::Vector3d absError = error.cwiseAbs();
+
+        meanSignedError += error;
+        meanAbsError += absError;
+        maxError = maxError.cwiseMax(absError);
     }
-    errCov /= static_cast<double>(estimatedPositions.size());
 
-    results.meanAbsError = err;
-    results.maxError = maxErr;
-    results.errorCovariance = errCov;
+    const double n = static_cast<double>(estimatedPositions.size());
+    meanSignedError /= n;
+    meanAbsError /= n;
+
+    Eigen::Matrix3d centeredCovariance = Eigen::Matrix3d::Zero();
+    Eigen::Matrix3d secondMoment = Eigen::Matrix3d::Zero();
+
+    for (const Eigen::Vector3d& estPos : estimatedPositions)
+    {
+        const Eigen::Vector3d error = estPos - params.truePosition;
+        const Eigen::Vector3d centeredError = error - meanSignedError;
+
+        centeredCovariance += centeredError * centeredError.transpose();
+        secondMoment += error * error.transpose();
+    }
+
+    centeredCovariance /= n;
+    secondMoment /= n;
+
+    results.meanAbsError = meanAbsError;
+    results.meanSignedError = meanSignedError;
+    results.maxError = maxError;
+    results.errorCovariance = centeredCovariance;
+    results.errorSecondMoment = secondMoment;
 
     return results;
 }
@@ -238,6 +258,9 @@ void printResults(const TrueRangeMultilateration::TestResults& results, const Tr
             results.meanAbsError.x(), results.meanAbsError.y(), results.meanAbsError.z());
     }
     
+    std::cout << std::format("  Mean Signed Error / Bias: [{:.2f}, {:.2f}, {:.2f}] (m)\n",
+        results.meanSignedError.x(), results.meanSignedError.y(), results.meanSignedError.z());
+
     if (options.printMaxError)
     {
         std::cout << std::format("  Max Error in Each Axis: [{:.2f}, {:.2f}, {:.2f}] (m)\n", 
@@ -248,18 +271,27 @@ void printResults(const TrueRangeMultilateration::TestResults& results, const Tr
     {
         if (options.printCovarianceDiagonalOnly)
         {
-            std::cout << std::format("  Error Covariance Diagonal (m^2): [{:.4f}, {:.4f}, {:.4f}]\n", 
+            std::cout << std::format("  Centered Error Covariance Diagonal (m^2): [{:.6g}, {:.6g}, {:.6g}]\n",
                 results.errorCovariance(0,0), results.errorCovariance(1,1), results.errorCovariance(2,2));
+            std::cout << std::format("  Error Second Moment / MSE Diagonal (m^2): [{:.6g}, {:.6g}, {:.6g}]\n",
+                results.errorSecondMoment(0,0), results.errorSecondMoment(1,1), results.errorSecondMoment(2,2));
         }
         else
         {
-            std::cout << "  Error Covariance Matrix (m^2):\n";
+            std::cout << "  Centered Error Covariance Matrix (m^2):\n";
             std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
                 results.errorCovariance(0,0), results.errorCovariance(0,1), results.errorCovariance(0,2));
             std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
                 results.errorCovariance(1,0), results.errorCovariance(1,1), results.errorCovariance(1,2));
             std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n", 
                 results.errorCovariance(2,0), results.errorCovariance(2,1), results.errorCovariance(2,2));
+            std::cout << "  Error Second Moment / MSE Matrix (m^2):\n";
+            std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n",
+                results.errorSecondMoment(0,0), results.errorSecondMoment(0,1), results.errorSecondMoment(0,2));
+            std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n",
+                results.errorSecondMoment(1,0), results.errorSecondMoment(1,1), results.errorSecondMoment(1,2));
+            std::cout << std::format("    [{:.4f}, {:.4f}, {:.4f}]\n",
+                results.errorSecondMoment(2,0), results.errorSecondMoment(2,1), results.errorSecondMoment(2,2));
         }
     }
 }
