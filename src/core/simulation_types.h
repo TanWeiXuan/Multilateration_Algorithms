@@ -43,8 +43,10 @@ struct TestParameters {
 
 struct TestResults {
     Eigen::Vector3d meanAbsError = Eigen::Vector3d::Zero();
+    Eigen::Vector3d meanSignedError = Eigen::Vector3d::Zero();
     Eigen::Vector3d maxError = Eigen::Vector3d::Zero();
     Eigen::Matrix3d errorCovariance = Eigen::Matrix3d::Zero();
+    Eigen::Matrix3d errorSecondMoment = Eigen::Matrix3d::Zero();
 };
 
 struct PrintOptions {

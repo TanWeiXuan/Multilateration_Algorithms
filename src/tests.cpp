@@ -6,6 +6,7 @@
 #include <chrono>
 #include <iostream>
 #include <format>
+#include <cmath>
 
 #include <Eigen/Dense>
 
@@ -14,6 +15,46 @@ namespace TrueRangeMultilateration
 
 
 namespace {
+
+
+void assertApprox(double actual, double expected)
+{
+    assert(std::abs(actual - expected) < 1e-12);
+}
+
+void runComputeResultsValidationTests()
+{
+    TestParameters params;
+    params.truePosition = Eigen::Vector3d::Zero();
+
+    {
+        const std::vector<Eigen::Vector3d> estimatedPositions = {
+            Eigen::Vector3d(1.0, 0.0, 0.0),
+            Eigen::Vector3d(3.0, 0.0, 0.0),
+        };
+        const TestResults results = computeResults(estimatedPositions, params);
+
+        assertApprox(results.meanSignedError.x(), 2.0);
+        assertApprox(results.meanAbsError.x(), 2.0);
+        assertApprox(results.errorCovariance(0, 0), 1.0);
+        assertApprox(results.errorSecondMoment(0, 0), 5.0);
+    }
+
+    {
+        const std::vector<Eigen::Vector3d> estimatedPositions = {
+            Eigen::Vector3d(-1.0, 0.0, 0.0),
+            Eigen::Vector3d(1.0, 0.0, 0.0),
+        };
+        const TestResults results = computeResults(estimatedPositions, params);
+
+        assertApprox(results.meanSignedError.x(), 0.0);
+        assertApprox(results.meanAbsError.x(), 1.0);
+        assertApprox(results.errorCovariance(0, 0), 1.0);
+        assertApprox(results.errorSecondMoment(0, 0), 1.0);
+    }
+
+    std::cout << "computeResults validation tests passed.\n";
+}
 
 void runCrlbValidationTests()
 {
@@ -60,6 +101,7 @@ void runTests(const TestParameters& params)
 {
     std::cout << "Running Tests...\n";
     runCrlbValidationTests();
+    runComputeResultsValidationTests();
 
     TestParameters testParams = params;
     printTestParams(testParams);

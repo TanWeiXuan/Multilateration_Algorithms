@@ -423,9 +423,13 @@ void WebApp::drawPanel() {
     if (ImGui::CollapsingHeader("Test Results", ImGuiTreeNodeFlags_DefaultOpen)) {
         const auto& r = runner_.results();
         ImGui::Text("Mean Absolute Error:\n [%.3f %.3f %.3f]", r.meanAbsError.x(), r.meanAbsError.y(), r.meanAbsError.z());
+        ImGui::Text("Mean Signed Error / Bias:\n [%.3f %.3f %.3f]", r.meanSignedError.x(), r.meanSignedError.y(),
+                    r.meanSignedError.z());
         ImGui::Text("Max Error:\n [%.3f %.3f %.3f]", r.maxError.x(), r.maxError.y(), r.maxError.z());
-        ImGui::Text("Covariance Diagonal:\n [%.4f %.4f %.4f]", r.errorCovariance(0, 0), r.errorCovariance(1, 1),
-                    r.errorCovariance(2, 2));
+        ImGui::Text("Centered Error Covariance Diagonal:\n [%.6g %.6g %.6g]", r.errorCovariance(0, 0),
+                    r.errorCovariance(1, 1), r.errorCovariance(2, 2));
+        ImGui::Text("Error Second Moment / MSE Diagonal:\n [%.6g %.6g %.6g]", r.errorSecondMoment(0, 0),
+                    r.errorSecondMoment(1, 1), r.errorSecondMoment(2, 2));
         ImGui::Text("Elapsed: %.1f ms", runner_.elapsedMs());
     }
 
