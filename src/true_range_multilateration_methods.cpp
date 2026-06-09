@@ -1,5 +1,6 @@
 #include "true_range_multilateration_methods.h"
 
+#include <algorithm>
 #include <format>
 #include <functional>
 #include <iostream>
@@ -472,6 +473,92 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
                    std::sqrt(z_hat(2)) * signum(lamda_WLLS(2));
 
     return posEstimate;
+}
+
+CrlbResult calculateRangePositionCrlb(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const Eigen::Vector3d& evaluationPosition,
+    double rangeStdDev
+)
+{
+    CrlbResult result;
+
+    auto appendWarning = [&result](const std::string& warning) {
+        if (!result.warning.empty()) {
+            result.warning += " ";
+        }
+        result.warning += warning;
+    };
+
+    if (rangeStdDev <= 0.0) {
+        result.valid = false;
+        result.usedPseudoInverse = true;
+        appendWarning("Range standard deviation must be positive.");
+        return result;
+    }
+
+    if (anchorPositions.size() < 4) {
+        result.usedPseudoInverse = true;
+        appendWarning("Fewer than 4 anchors cannot fully constrain a 3D true-range position; displaying pseudo-inverse CRLB.");
+    }
+
+    const double inverseVariance = 1.0 / (rangeStdDev * rangeStdDev);
+    constexpr double minRange = 1e-12;
+    size_t usableAnchorCount = 0;
+
+    for (const Eigen::Vector3d& anchorPosition : anchorPositions) {
+        const Eigen::Vector3d delta = evaluationPosition - anchorPosition;
+        const double rho = delta.norm();
+        if (rho <= minRange) {
+            result.usedPseudoInverse = true;
+            appendWarning("An anchor is too close to the CRLB evaluation position and was skipped.");
+            continue;
+        }
+
+        const Eigen::Vector3d h = delta / rho;
+        result.fisherInformation += inverseVariance * (h * h.transpose());
+        ++usableAnchorCount;
+    }
+
+    if (usableAnchorCount == 0) {
+        result.valid = false;
+        result.usedPseudoInverse = true;
+        appendWarning("No usable anchors remain after input validation.");
+        return result;
+    }
+
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver(result.fisherInformation);
+    if (eigensolver.info() != Eigen::Success) {
+        result.valid = false;
+        result.usedPseudoInverse = true;
+        appendWarning("Failed to decompose the Fisher information matrix.");
+        return result;
+    }
+
+    const Eigen::Vector3d eigenvalues = eigensolver.eigenvalues();
+    const Eigen::Matrix3d eigenvectors = eigensolver.eigenvectors();
+    const double maxAbsEigenvalue = eigenvalues.cwiseAbs().maxCoeff();
+    const double tolerance = 1e-12 * std::max(1.0, maxAbsEigenvalue);
+
+    Eigen::Vector3d inverseEigenvalues = Eigen::Vector3d::Zero();
+    result.rank = 0;
+    for (Eigen::Index i = 0; i < eigenvalues.size(); ++i) {
+        if (eigenvalues(i) > tolerance) {
+            inverseEigenvalues(i) = 1.0 / eigenvalues(i);
+            ++result.rank;
+        }
+    }
+
+    result.crlb = eigenvectors * inverseEigenvalues.asDiagonal() * eigenvectors.transpose();
+    result.crlb = 0.5 * (result.crlb + result.crlb.transpose());
+    result.valid = true;
+
+    if (result.rank < 3) {
+        result.usedPseudoInverse = true;
+        appendWarning("Fisher information matrix is rank deficient; displaying pseudo-inverse CRLB. The true covariance bound is unbounded in one or more directions.");
+    }
+
+    return result;
 }
 
 } // namespace TrueRangeMultilateration

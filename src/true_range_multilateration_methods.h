@@ -1,8 +1,11 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include <Eigen/Dense>
+
+#include "core/simulation_types.h"
 
 namespace TrueRangeMultilateration
 {
@@ -92,6 +95,19 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
     const std::vector<Eigen::Vector3d>& anchorPositions,
     const std::vector<double>& ranges,
     const std::vector<double>& rangeStdDevs
+);
+
+/**
+ * @brief Computes the Cramer-Rao lower bound for 3D true-range multilateration.
+ * @param anchorPositions Exact 3D positions of anchors
+ * @param evaluationPosition 3D position where the bound is evaluated
+ * @param rangeStdDev Shared standard deviation of independent Gaussian range noise
+ * @return CrlbResult containing the Fisher information matrix, CRLB, rank, and any warning
+ */
+CrlbResult calculateRangePositionCrlb(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const Eigen::Vector3d& evaluationPosition,
+    double rangeStdDev
 );
 
 } // namespace TrueRangeMultilateration

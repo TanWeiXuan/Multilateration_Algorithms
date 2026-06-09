@@ -19,6 +19,16 @@ enum class AlgorithmId {
     TwoStepWeightedLinearLeastSquaresIYueWang,
 };
 
+
+struct CrlbResult {
+    Eigen::Matrix3d crlb = Eigen::Matrix3d::Zero();
+    Eigen::Matrix3d fisherInformation = Eigen::Matrix3d::Zero();
+    bool valid = false;
+    bool usedPseudoInverse = false;
+    int rank = 0;
+    std::string warning;
+};
+
 struct TestParameters {
     Eigen::Vector3d truePosition = Eigen::Vector3d::Zero();
     std::vector<Eigen::Vector3d> anchorPositions = {};
