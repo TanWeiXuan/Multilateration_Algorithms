@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include <Eigen/Dense>
@@ -34,6 +35,11 @@ class WebApp {
     TrueRangeMultilateration::SimulationRunner runner_;
     Viewport2D viewport_;
     bool showEstimates_ = true;
+
+    Eigen::Matrix3d crlbMatrix_ = Eigen::Matrix3d::Zero();
+    bool hasCrlbResult_ = false;
+    bool crlbUsedPseudoInverse_ = false;
+    std::string crlbWarning_;
     int maxRenderedEstimates_ = 1000;
     bool fitRequested_ = true;
     bool touchPanActive_ = false;

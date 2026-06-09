@@ -381,6 +381,43 @@ void WebApp::drawPanel() {
         ImGui::Text("%zu / %zu", runner_.currentRun(), runner_.totalRuns());
     }
 
+    if (ImGui::CollapsingHeader("CRLB", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::TextWrapped("CRLB assumes independent zero-mean Gaussian range noise with a shared standard deviation, no outliers, and exact anchor positions. The bound is evaluated at the current ground-truth position.");
+
+        if (ImGui::Button("Calculate CRLB")) {
+            params_.anchorPositions.clear();
+            params_.anchorPositions.reserve(anchors_.size());
+            for (const auto& a : anchors_) {
+                params_.anchorPositions.push_back(a.position);
+            }
+
+            const auto result = TrueRangeMultilateration::calculateRangePositionCrlb(
+                params_.anchorPositions,
+                params_.truePosition,
+                params_.rangeNoiseStdDev
+            );
+
+            hasCrlbResult_ = result.valid;
+            crlbMatrix_ = result.crlb;
+            crlbUsedPseudoInverse_ = result.usedPseudoInverse;
+            crlbWarning_ = result.warning;
+        }
+
+        if (hasCrlbResult_) {
+            ImGui::Text("CRLB Matrix:");
+            ImGui::Text("[ % .3g  % .3g  % .3g ]", crlbMatrix_(0, 0), crlbMatrix_(0, 1), crlbMatrix_(0, 2));
+            ImGui::Text("[ % .3g  % .3g  % .3g ]", crlbMatrix_(1, 0), crlbMatrix_(1, 1), crlbMatrix_(1, 2));
+            ImGui::Text("[ % .3g  % .3g  % .3g ]", crlbMatrix_(2, 0), crlbMatrix_(2, 1), crlbMatrix_(2, 2));
+        }
+
+        if (!crlbWarning_.empty() || crlbUsedPseudoInverse_) {
+            const char* warning = crlbWarning_.empty()
+                ? "Fisher information matrix required a pseudo-inverse; the true covariance bound may be unbounded in one or more directions."
+                : crlbWarning_.c_str();
+            ImGui::TextWrapped("Warning: %s", warning);
+        }
+    }
+
     if (ImGui::CollapsingHeader("Test Results", ImGuiTreeNodeFlags_DefaultOpen)) {
         const auto& r = runner_.results();
         ImGui::Text("Mean Absolute Error:\n [%.3f %.3f %.3f]", r.meanAbsError.x(), r.meanAbsError.y(), r.meanAbsError.z());

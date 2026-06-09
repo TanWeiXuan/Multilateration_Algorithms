@@ -2,6 +2,7 @@
 #include "test_helpers.h"
 #include "true_range_multilateration_methods.h"
 
+#include <cassert>
 #include <chrono>
 #include <iostream>
 #include <format>
@@ -11,9 +12,54 @@
 namespace TrueRangeMultilateration
 {
 
+
+namespace {
+
+void runCrlbValidationTests()
+{
+    const std::vector<Eigen::Vector3d> defaultAnchors = {
+        Eigen::Vector3d(-5.0, -5.0, 10.0),
+        Eigen::Vector3d(-5.0,  5.0, 10.0),
+        Eigen::Vector3d( 5.0,  5.0, 10.0),
+        Eigen::Vector3d( 5.0, -5.0, 10.0),
+        Eigen::Vector3d(-5.0, -5.0,  0.0),
+        Eigen::Vector3d(-5.0,  5.0,  0.0),
+        Eigen::Vector3d( 5.0,  5.0,  0.0),
+        Eigen::Vector3d( 5.0, -5.0,  0.0),
+    };
+    const Eigen::Vector3d truePosition(0.0, 0.0, 5.0);
+
+    const CrlbResult validResult = calculateRangePositionCrlb(defaultAnchors, truePosition, 0.05);
+    assert(validResult.valid);
+    assert(validResult.rank == 3);
+    assert(!validResult.usedPseudoInverse);
+    assert(validResult.crlb.isApprox(validResult.crlb.transpose(), 1e-12));
+    assert(validResult.crlb.diagonal().minCoeff() >= -1e-12);
+
+    const std::vector<Eigen::Vector3d> insufficientAnchors = {
+        Eigen::Vector3d(-5.0, 0.0, 0.0),
+        Eigen::Vector3d( 5.0, 0.0, 0.0),
+    };
+    const CrlbResult degenerateResult = calculateRangePositionCrlb(insufficientAnchors, truePosition, 0.05);
+    assert(degenerateResult.valid);
+    assert(degenerateResult.usedPseudoInverse);
+    assert(degenerateResult.rank < 3);
+    assert(!degenerateResult.warning.empty());
+
+    const CrlbResult invalidNoiseResult = calculateRangePositionCrlb(defaultAnchors, truePosition, 0.0);
+    assert(!invalidNoiseResult.valid);
+    assert(!invalidNoiseResult.warning.empty());
+
+    std::cout << "CRLB validation tests passed.\n";
+}
+
+} // namespace
+
+
 void runTests(const TestParameters& params)
 {
     std::cout << "Running Tests...\n";
+    runCrlbValidationTests();
 
     TestParameters testParams = params;
     printTestParams(testParams);
