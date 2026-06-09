@@ -1,5 +1,7 @@
 #include "web_app.h"
 
+#include "../true_range_multilateration_methods.h"
+
 #include <algorithm>
 #include <cmath>
 #include <string>
