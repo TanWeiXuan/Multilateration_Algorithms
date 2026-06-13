@@ -2,11 +2,62 @@
 #include "test_helpers.h"
 #include "true_range_multilateration_methods.h"
 
+#include <cassert>
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <format>
 
 #include <Eigen/Dense>
+
+namespace
+{
+
+static void assertApprox(double a, double b, double tol = 1e-6)
+{
+    assert(std::fabs(a - b) <= tol);
+}
+
+static void runComputeResultsValidationTests()
+{
+    using namespace TrueRangeMultilateration;
+    TestParameters params;
+    params.truePosition = Eigen::Vector3d(0.0, 0.0, 0.0);
+    params.numRuns = 3;
+    std::vector<Eigen::Vector3d> estimates = {
+        Eigen::Vector3d(1.0, -1.0, 2.0),
+        Eigen::Vector3d(-1.0, 1.0, 0.0),
+        Eigen::Vector3d(0.0, 0.0, -1.0)
+    };
+    TestResults res = computeResults(estimates, params);
+
+    assertApprox(res.meanSignedError.x(), 0.0);
+    assertApprox(res.meanSignedError.y(), 0.0);
+    assertApprox(res.meanSignedError.z(), 1.0 / 3.0);
+
+    assertApprox(res.meanAbsError.x(), (1.0 + 1.0 + 0.0) / 3.0);
+    assertApprox(res.meanAbsError.y(), (1.0 + 1.0 + 0.0) / 3.0);
+    assertApprox(res.meanAbsError.z(), (2.0 + 0.0 + 1.0) / 3.0);
+}
+
+static void runCrlbValidationTests()
+{
+    using namespace TrueRangeMultilateration;
+    std::vector<Eigen::Vector3d> anchors = {
+        Eigen::Vector3d(0.0, 0.0, 0.0),
+        Eigen::Vector3d(1.0, 0.0, 0.0),
+        Eigen::Vector3d(0.0, 1.0, 0.0),
+        Eigen::Vector3d(0.0, 0.0, 1.0)
+    };
+    Eigen::Vector3d evalPos(0.1, 0.1, 0.1);
+    double noiseStd = 0.05;
+    CrlbResult res = calculateRangePositionCrlb(anchors, evalPos, noiseStd);
+
+    assert(res.valid);
+    assert(res.crlb(0, 0) > 0.0 && res.crlb(1, 1) > 0.0 && res.crlb(2, 2) > 0.0);
+}
+
+} // namespace
 
 namespace TrueRangeMultilateration
 {
@@ -14,6 +65,10 @@ namespace TrueRangeMultilateration
 void runTests(const TestParameters& params)
 {
     std::cout << "Running Tests...\n";
+
+    // Validate helper functions and CRLB implementation
+    runComputeResultsValidationTests();
+    runCrlbValidationTests();
 
     TestParameters testParams = params;
     printTestParams(testParams);

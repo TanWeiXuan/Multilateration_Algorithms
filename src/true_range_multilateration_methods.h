@@ -1,6 +1,9 @@
 #pragma once
 
+#include <string>
 #include <vector>
+
+#include "tests.h"
 
 #include <Eigen/Dense>
 
@@ -92,6 +95,20 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
     const std::vector<Eigen::Vector3d>& anchorPositions,
     const std::vector<double>& ranges,
     const std::vector<double>& rangeStdDevs
+);
+
+/**
+ * @brief Computes the Cramer–Rao lower bound (CRLB) for a 3D
+ * true-range multilateration problem.
+ * @param anchorPositions exact 3D positions of all anchors
+ * @param evaluationPosition the 3D point where the bound is evaluated
+ * @param rangeStdDev shared standard deviation of the independent Gaussian range noise
+ * @return CrlbResult containing the Fisher information matrix, CRLB, rank and any warning
+ */
+CrlbResult calculateRangePositionCrlb(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const Eigen::Vector3d& evaluationPosition,
+    double rangeStdDev
 );
 
 } // namespace TrueRangeMultilateration

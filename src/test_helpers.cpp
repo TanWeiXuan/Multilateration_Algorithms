@@ -200,27 +200,34 @@ TrueRangeMultilateration::TestResults computeResults(
 {
     TrueRangeMultilateration::TestResults results;
     
-    Eigen::Vector3d err = Eigen::Vector3d::Zero();
+    Eigen::Vector3d absErrorSum = Eigen::Vector3d::Zero();
+    Eigen::Vector3d signedErrorSum = Eigen::Vector3d::Zero();
     Eigen::Vector3d maxErr = Eigen::Vector3d::Zero();
+    Eigen::Matrix3d secondMoment = Eigen::Matrix3d::Zero();
     
     for(const Eigen::Vector3d& estPos : estimatedPositions)
     {
         Eigen::Vector3d diff = estPos - params.truePosition;
-        err += diff.cwiseAbs();
+        signedErrorSum += diff;
+        secondMoment += diff * diff.transpose();
+        absErrorSum += diff.cwiseAbs();
         
         // Track maximum error in each axis
         maxErr = maxErr.cwiseMax(diff.cwiseAbs());
     }
-    err /= static_cast<double>(estimatedPositions.size());
+
+    const double nRuns = static_cast<double>(estimatedPositions.size());
+    results.meanAbsError = absErrorSum / nRuns;
+    results.meanSignedError = signedErrorSum / nRuns;
+    results.errorSecondMoment = secondMoment / nRuns;
 
     Eigen::Matrix3d errCov = Eigen::Matrix3d::Zero();
     for (const auto& estPos : estimatedPositions) {
-        Eigen::Vector3d diff = (estPos - params.truePosition) - err;
+        Eigen::Vector3d diff = (estPos - params.truePosition) - results.meanSignedError;
         errCov += diff * diff.transpose();
     }
-    errCov /= static_cast<double>(estimatedPositions.size());
+    errCov /= nRuns;
 
-    results.meanAbsError = err;
     results.maxError = maxErr;
     results.errorCovariance = errCov;
 

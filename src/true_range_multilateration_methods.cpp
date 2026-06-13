@@ -1,8 +1,10 @@
 #include "true_range_multilateration_methods.h"
 
+#include <cmath>
 #include <format>
 #include <functional>
 #include <iostream>
+#include <limits>
 
 #include <unsupported/Eigen/NonLinearOptimization>
 
@@ -472,6 +474,74 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
                    std::sqrt(z_hat(2)) * signum(lamda_WLLS(2));
 
     return posEstimate;
+}
+
+
+CrlbResult calculateRangePositionCrlb(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const Eigen::Vector3d& evaluationPosition,
+    double rangeStdDev
+)
+{
+    CrlbResult result;
+
+    if(anchorPositions.size() < 4)
+    {
+        result.warning = "At least four anchors are required to compute a 3D CRLB.";
+        return result;
+    }
+
+    if(rangeStdDev <= 0.0 || !std::isfinite(rangeStdDev))
+    {
+        result.warning = "Range standard deviation must be positive and finite.";
+        return result;
+    }
+
+    std::vector<Eigen::RowVector3d> jacobianRows;
+    jacobianRows.reserve(anchorPositions.size());
+    for(const Eigen::Vector3d& anchorPos : anchorPositions)
+    {
+        Eigen::Vector3d delta = evaluationPosition - anchorPos;
+        const double distance = delta.norm();
+        if(distance <= std::numeric_limits<double>::epsilon())
+        {
+            continue;
+        }
+        jacobianRows.emplace_back(delta.transpose() / distance);
+    }
+
+    if(jacobianRows.size() < 4)
+    {
+        result.warning = "Fewer than four usable anchors remain after excluding anchors at the evaluation position.";
+        return result;
+    }
+
+    Eigen::MatrixXd J(jacobianRows.size(), 3);
+    for(size_t i = 0; i < jacobianRows.size(); ++i)
+    {
+        J.row(static_cast<Eigen::Index>(i)) = jacobianRows[i];
+    }
+
+    result.fisherInformation = (1.0 / sq(rangeStdDev)) * (J.transpose() * J);
+    result.rank = result.fisherInformation.fullPivLu().rank();
+
+    if(result.rank < 3)
+    {
+        result.usedPseudoInverse = true;
+        result.crlb = result.fisherInformation.completeOrthogonalDecomposition().pseudoInverse();
+        result.warning = "Fisher information matrix is rank deficient; CRLB computed with pseudoinverse.";
+        result.valid = false;
+        return result;
+    }
+
+    result.crlb = result.fisherInformation.inverse();
+    result.valid = result.crlb.allFinite();
+    if(!result.valid)
+    {
+        result.warning = "CRLB computation produced non-finite values.";
+    }
+
+    return result;
 }
 
 } // namespace TrueRangeMultilateration
