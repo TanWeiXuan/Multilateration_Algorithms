@@ -95,3 +95,11 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
 
 
 
+
+## Web App
+
+An interactive web application is available to experiment with the multilateration
+algorithms.  It exposes the same functionality as the command-line tests—such
+as configurable anchor noise, robust loss functions and noise parameters—and
+lets you visualise how different algorithms behave under varying conditions.
+Check the repository’s `pages` branch for the source code of the web app.

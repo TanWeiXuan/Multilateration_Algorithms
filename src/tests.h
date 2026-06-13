@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <functional>
+#include <string>
 
 #include <Eigen/Dense>
 
@@ -34,8 +35,27 @@ struct TestResults {
     Eigen::Vector3d meanAbsError = Eigen::Vector3d::Zero();
     // Maximum error in each axis
     Eigen::Vector3d maxError = Eigen::Vector3d::Zero();
+    // Mean of the signed error (x, y, z) over all runs
+    Eigen::Vector3d meanSignedError = Eigen::Vector3d::Zero();
+    // Second moment of the error (E[xxᵀ]); used for computing CRLB
+    Eigen::Matrix3d errorSecondMoment = Eigen::Matrix3d::Zero();
     // Error covariance matrix
     Eigen::Matrix3d errorCovariance = Eigen::Matrix3d::Zero();
+};
+
+struct CrlbResult {
+    // 3×3 Cramer–Rao lower bound matrix (m²)
+    Eigen::Matrix3d crlb = Eigen::Matrix3d::Zero();
+    // 3×3 Fisher information matrix used to compute the CRLB
+    Eigen::Matrix3d fisherInformation = Eigen::Matrix3d::Zero();
+    // Whether the bound is valid (e.g. enough anchors and finite noise)
+    bool valid = false;
+    // Whether a pseudoinverse was used because the FIM was rank deficient
+    bool usedPseudoInverse = false;
+    // Rank of the Fisher information matrix
+    int rank = 0;
+    // Warning message if something goes wrong
+    std::string warning;
 };
 
 struct PrintOptions {
