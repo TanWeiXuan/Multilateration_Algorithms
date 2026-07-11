@@ -1,76 +1,35 @@
 # Test Harness
 
-## Files
+## Responsibilities
 
-- `src/tests.h`
-- `src/tests.cpp`
+`src/tests.cpp` orchestrates the native benchmark scenarios and contains small deterministic validation checks. Shared data types now live in `src/core/simulation_types.h`; `src/tests.h` only declares the CLI harness API.
 
-## Purpose
+## Shared Types
 
-The test harness defines shared test data structures and orchestrates the repository's simulation-based comparisons.
+- `AlgorithmId`: stable frontend-neutral identifiers for estimators.
+- `TestParameters`: target, anchors, noise/outlier model, seed, run count, and selected algorithm.
+- `TestResults`: mean absolute and signed errors, maximum error, centered covariance, and error second moment/MSE.
+- `CrlbResult`: CRLB/Fisher matrices, rank, validity, pseudoinverse flag, and warning.
+- `PrintOptions`: controls console result formatting.
 
-## Core types
+## Validation Checks
 
-### `TestParameters`
+Before benchmark scenarios, `runTests` checks:
 
-Configuration for one simulation run group:
+- Empty estimates return zero-initialized results.
+- Biased and unbiased samples produce the expected bias, covariance, and MSE.
+- A well-conditioned anchor layout produces a symmetric, nonnegative, full-rank CRLB.
+- Rank-deficient geometry reports pseudoinverse use and a warning.
+- Zero and non-finite range standard deviations are rejected.
 
-- `truePosition`: target position to estimate.
-- `anchorPositions`: known anchor positions.
-- `rangeNoiseStdDev`: Gaussian range-noise standard deviation.
-- `rangeOutlierRatio`: probability that a generated range receives an outlier offset.
-- `rangeOutlierMagnitude`: maximum uniform outlier magnitude.
-- `anchorPosNoiseStdDev`: Gaussian noise applied to anchor positions during tests.
-- `randomSeed`: optional seed for reproducible random generation.
-- `numRuns`: Monte Carlo sample count per algorithm.
+These checks use `assert`; run a Debug build when validation must not be compiled out.
 
-### `TestResults`
+## Scenario Coverage
 
-Aggregated error statistics:
+The CLI executes every estimator with nominal range noise, anchor-position noise, and range outliers. `runTest` generates measurements, invokes the estimator, stores estimates, aggregates results, and reports total and per-run timing.
 
-- Mean absolute error per axis.
-- Maximum absolute error per axis.
-- Mean signed error per axis.
-- Error second moment matrix.
-- Error covariance matrix.
+The web frontend does not call `runTests`; it uses `SimulationRunner` to execute bounded batches per frame. Changes to shared numerical behavior should be covered in the CLI checks and smoke-tested in the web frontend.
 
-### `CrlbResult`
+## Adding Coverage
 
-Result type for lower-bound analysis:
-
-- CRLB matrix.
-- Fisher information matrix.
-- Validity and pseudoinverse flags.
-- Fisher matrix rank.
-- Warning text.
-
-### `PrintOptions`
-
-Controls which result summaries are printed.
-
-### `MultilaterationMethod`
-
-A callable type alias for algorithms that accept anchor positions and ranges and return an `Eigen::Vector3d` estimate.
-
-## Validation checks
-
-Before running benchmark-style scenarios, `runTests` executes small validation checks for:
-
-- Result aggregation in `computeResults`.
-- Basic CRLB validity for a nondegenerate four-anchor configuration.
-
-These checks use `assert`, so they are disabled if the binary is compiled with `NDEBUG`.
-
-## Scenario groups
-
-`runTests` executes each implemented algorithm across three scenario groups:
-
-1. Range noise without outliers.
-2. Range noise plus anchor-position noise.
-3. Range noise plus range outliers.
-
-Each scenario prints per-algorithm result summaries and timing information.
-
-## Timing behavior
-
-`runTest` times only the repeated generation of noisy inputs, algorithm calls, and estimate storage for a single algorithm/scenario pair. It then prints total elapsed time and average time per run.
+Keep validation deterministic and small. Add regression checks next to the affected behavior, then ensure `runTests` invokes each check exactly once. A future dedicated unit-test target remains desirable; see [Future Plans](future-plans.md).

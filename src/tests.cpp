@@ -7,68 +7,117 @@
 #include <cmath>
 #include <iostream>
 #include <format>
+#include <limits>
 
 #include <Eigen/Dense>
-
-namespace
-{
-
-static void assertApprox(double a, double b, double tol = 1e-6)
-{
-    assert(std::fabs(a - b) <= tol);
-}
-
-static void runComputeResultsValidationTests()
-{
-    using namespace TrueRangeMultilateration;
-    TestParameters params;
-    params.truePosition = Eigen::Vector3d(0.0, 0.0, 0.0);
-    params.numRuns = 3;
-    std::vector<Eigen::Vector3d> estimates = {
-        Eigen::Vector3d(1.0, -1.0, 2.0),
-        Eigen::Vector3d(-1.0, 1.0, 0.0),
-        Eigen::Vector3d(0.0, 0.0, -1.0)
-    };
-    TestResults res = computeResults(estimates, params);
-
-    assertApprox(res.meanSignedError.x(), 0.0);
-    assertApprox(res.meanSignedError.y(), 0.0);
-    assertApprox(res.meanSignedError.z(), 1.0 / 3.0);
-
-    assertApprox(res.meanAbsError.x(), (1.0 + 1.0 + 0.0) / 3.0);
-    assertApprox(res.meanAbsError.y(), (1.0 + 1.0 + 0.0) / 3.0);
-    assertApprox(res.meanAbsError.z(), (2.0 + 0.0 + 1.0) / 3.0);
-}
-
-static void runCrlbValidationTests()
-{
-    using namespace TrueRangeMultilateration;
-    std::vector<Eigen::Vector3d> anchors = {
-        Eigen::Vector3d(0.0, 0.0, 0.0),
-        Eigen::Vector3d(1.0, 0.0, 0.0),
-        Eigen::Vector3d(0.0, 1.0, 0.0),
-        Eigen::Vector3d(0.0, 0.0, 1.0)
-    };
-    Eigen::Vector3d evalPos(0.1, 0.1, 0.1);
-    double noiseStd = 0.05;
-    CrlbResult res = calculateRangePositionCrlb(anchors, evalPos, noiseStd);
-
-    assert(res.valid);
-    assert(res.crlb(0, 0) > 0.0 && res.crlb(1, 1) > 0.0 && res.crlb(2, 2) > 0.0);
-}
-
-} // namespace
 
 namespace TrueRangeMultilateration
 {
 
+
+namespace {
+
+
+void assertApprox(double actual, double expected)
+{
+    assert(std::abs(actual - expected) < 1e-12);
+}
+
+void runComputeResultsValidationTests()
+{
+    TestParameters params;
+    params.truePosition = Eigen::Vector3d::Zero();
+
+    {
+        const TestResults results = computeResults({}, params);
+        assert(results.meanSignedError.isZero());
+        assert(results.errorCovariance.isZero());
+        assert(results.errorSecondMoment.isZero());
+    }
+
+    {
+        const std::vector<Eigen::Vector3d> estimatedPositions = {
+            Eigen::Vector3d(1.0, 0.0, 0.0),
+            Eigen::Vector3d(3.0, 0.0, 0.0),
+        };
+        const TestResults results = computeResults(estimatedPositions, params);
+
+        assertApprox(results.meanSignedError.x(), 2.0);
+        assertApprox(results.meanAbsError.x(), 2.0);
+        assertApprox(results.errorCovariance(0, 0), 1.0);
+        assertApprox(results.errorSecondMoment(0, 0), 5.0);
+    }
+
+    {
+        const std::vector<Eigen::Vector3d> estimatedPositions = {
+            Eigen::Vector3d(-1.0, 0.0, 0.0),
+            Eigen::Vector3d(1.0, 0.0, 0.0),
+        };
+        const TestResults results = computeResults(estimatedPositions, params);
+
+        assertApprox(results.meanSignedError.x(), 0.0);
+        assertApprox(results.meanAbsError.x(), 1.0);
+        assertApprox(results.errorCovariance(0, 0), 1.0);
+        assertApprox(results.errorSecondMoment(0, 0), 1.0);
+    }
+
+    std::cout << "computeResults validation tests passed.\n";
+}
+
+void runCrlbValidationTests()
+{
+    const std::vector<Eigen::Vector3d> defaultAnchors = {
+        Eigen::Vector3d(-5.0, -5.0, 10.0),
+        Eigen::Vector3d(-5.0,  5.0, 10.0),
+        Eigen::Vector3d( 5.0,  5.0, 10.0),
+        Eigen::Vector3d( 5.0, -5.0, 10.0),
+        Eigen::Vector3d(-5.0, -5.0,  0.0),
+        Eigen::Vector3d(-5.0,  5.0,  0.0),
+        Eigen::Vector3d( 5.0,  5.0,  0.0),
+        Eigen::Vector3d( 5.0, -5.0,  0.0),
+    };
+    const Eigen::Vector3d truePosition(0.0, 0.0, 5.0);
+
+    const CrlbResult validResult = calculateRangePositionCrlb(defaultAnchors, truePosition, 0.05);
+    assert(validResult.valid);
+    assert(validResult.rank == 3);
+    assert(!validResult.usedPseudoInverse);
+    assert(validResult.crlb.isApprox(validResult.crlb.transpose(), 1e-12));
+    assert(validResult.crlb.diagonal().minCoeff() >= -1e-12);
+
+    const std::vector<Eigen::Vector3d> insufficientAnchors = {
+        Eigen::Vector3d(-5.0, 0.0, 0.0),
+        Eigen::Vector3d( 5.0, 0.0, 0.0),
+    };
+    const CrlbResult degenerateResult = calculateRangePositionCrlb(insufficientAnchors, truePosition, 0.05);
+    assert(degenerateResult.valid);
+    assert(degenerateResult.usedPseudoInverse);
+    assert(degenerateResult.rank < 3);
+    assert(!degenerateResult.warning.empty());
+
+    const CrlbResult invalidNoiseResult = calculateRangePositionCrlb(defaultAnchors, truePosition, 0.0);
+    assert(!invalidNoiseResult.valid);
+    assert(!invalidNoiseResult.warning.empty());
+
+    const CrlbResult nonFiniteNoiseResult = calculateRangePositionCrlb(
+        defaultAnchors,
+        truePosition,
+        std::numeric_limits<double>::infinity()
+    );
+    assert(!nonFiniteNoiseResult.valid);
+    assert(!nonFiniteNoiseResult.warning.empty());
+
+    std::cout << "CRLB validation tests passed.\n";
+}
+
+} // namespace
+
+
 void runTests(const TestParameters& params)
 {
     std::cout << "Running Tests...\n";
-
-    // Validate helper functions and CRLB implementation
-    runComputeResultsValidationTests();
     runCrlbValidationTests();
+    runComputeResultsValidationTests();
 
     TestParameters testParams = params;
     printTestParams(testParams);

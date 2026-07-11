@@ -1,45 +1,42 @@
 # Build System
 
-## Overview
+## Configuration
 
-The repository uses CMake to build a single C++20 executable named `main`. The top-level project delegates dependency target setup to `libs/` and executable setup to `src/`.
+The CMake 3.15+ project uses C++20 and places native runtime output below the build directory's `bin` folder.
 
-## Files
+| Option | Default | Effect |
+| --- | --- | --- |
+| `MULTILAT_BUILD_CLI` | `ON` | Builds the native `main` executable (`multilat_cli` alias). |
+| `MULTILAT_BUILD_WEBAPP` | `OFF` | Builds `multilat_web` (`multilat_webapp` alias). Emscripten configuration enables it automatically. |
 
-### `CMakeLists.txt`
+`multilat_core` contains algorithms, shared simulation types, dispatch, the incremental runner, and test helpers. It links to the vendored `Eigen` and `EigenUnsupported` interface targets. The frontend targets link to this core.
 
-- Requires CMake 3.15 or newer.
-- Declares the `MultilaterationAlgorithms` project.
-- Sets `CMAKE_CXX_STANDARD` to C++20.
-- Places runtime binaries in `${CMAKE_BINARY_DIR}/bin`.
-- Adds the `libs` and `src` subdirectories.
+MSVC builds apply `/bigobj` to `multilat_core` because Eigen-heavy translation units can exceed the default COFF section limit.
 
-### `src/CMakeLists.txt`
-
-- Defines the `main` executable.
-- Compiles:
-  - `src/main.cpp`
-  - `src/true_range_multilateration_methods.cpp`
-  - `src/tests.cpp`
-  - `src/test_helpers.cpp`
-- Adds `src/` as a private include directory.
-- Links against the vendored `Eigen` and `EigenUnsupported` interface targets.
-
-### `libs/CMakeLists.txt`
-
-- Defines a header-only `Eigen` interface target for `libs/eigen-5.0.0`.
-- Defines a header-only `EigenUnsupported` interface target intended to expose Eigen's unsupported modules.
-
-## Typical commands
+## Native Build
 
 ```bash
-cmake -S . -B build
-cmake --build build
+cmake -S . -B build -DMULTILAT_BUILD_CLI=ON -DMULTILAT_BUILD_WEBAPP=OFF
+cmake --build build --config Release --target main
 ./build/bin/main
 ```
 
-## Maintainer notes
+Single-configuration generators place the executable at `build/bin/main`. Visual Studio normally uses `build\\bin\\Release\\main.exe` for a Release build.
 
-- The executable and validation checks are currently coupled: building `main` also builds the algorithms and the test harness into one binary.
-- There is no separate library target for the multilateration algorithms yet. Creating one would make the code easier to reuse from external applications and unit tests.
-- See [Future plans and known issues](future-plans.md) for a known include-directory issue in the `EigenUnsupported` CMake setup.
+## Web Build
+
+```bash
+git submodule update --init --recursive
+emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release -DMULTILAT_BUILD_CLI=OFF -DMULTILAT_BUILD_WEBAPP=ON
+cmake --build build-web --config Release --target multilat_web
+```
+
+Web configuration fails early when Raylib, Dear ImGui, or rlImGui submodule files are absent. Generated `index.html`, `index.js`, and `index.wasm` live together in `build-web/bin`.
+
+## CMake Layout
+
+- Top-level `CMakeLists.txt` defines project options and adds `libs/` and `src/`.
+- `libs/CMakeLists.txt` exposes Eigen headers through interface targets.
+- `src/CMakeLists.txt` defines `multilat_core`, native CLI, web dependencies, and Emscripten link options.
+
+Never reuse a configured native build directory for Emscripten. See [Troubleshooting](troubleshooting.md) for cache and toolchain problems.

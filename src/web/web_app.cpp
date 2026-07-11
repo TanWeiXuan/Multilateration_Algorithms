@@ -1,0 +1,460 @@
+#include "web_app.h"
+
+#include "../true_range_multilateration_methods.h"
+
+#include <algorithm>
+#include <cmath>
+#include <string>
+
+#include <imgui.h>
+#include <raylib.h>
+#include <rlImGui.h>
+
+using TrueRangeMultilateration::AlgorithmId;
+
+WebApp::WebApp() {
+    params_.truePosition = Eigen::Vector3d(0.0, 0.0, 5.0);
+    params_.anchorPositions = {
+        Eigen::Vector3d(-5.0, -5.0, 10.0), Eigen::Vector3d(-5.0, 5.0, 10.0),
+        Eigen::Vector3d(5.0, 5.0, 10.0),   Eigen::Vector3d(5.0, -5.0, 10.0),
+        Eigen::Vector3d(-5.0, -5.0, 0.0),  Eigen::Vector3d(-5.0, 5.0, 0.0),
+        Eigen::Vector3d(5.0, 5.0, 0.0),    Eigen::Vector3d(5.0, -5.0, 0.0),
+    };
+
+    anchors_.reserve(params_.anchorPositions.size());
+    for (size_t i = 0; i < params_.anchorPositions.size(); ++i) {
+        anchors_.push_back({static_cast<int>(i), params_.anchorPositions[i]});
+    }
+
+    params_.rangeNoiseStdDev = 0.05;
+    params_.numRuns = 2000;
+}
+
+void WebApp::runFrame() {
+    frameMetrics_ = getWebViewportMetrics();
+    if (frameMetrics_.cssWidth <= 0.0F || frameMetrics_.cssHeight <= 0.0F) {
+        frameMetrics_.cssWidth = static_cast<float>(GetScreenWidth());
+        frameMetrics_.cssHeight = static_cast<float>(GetScreenHeight());
+    }
+
+    viewport_.canvas = {0.0F, 0.0F, static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())};
+
+    if (fitRequested_) {
+        fitView();
+        fitRequested_ = false;
+    }
+
+    handleViewportInput();
+    if (runner_.status() == TrueRangeMultilateration::SimulationRunner::Status::Running) {
+        runner_.step(128);
+    }
+
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
+    drawScene();
+
+    rlImGuiBegin();
+    drawPanel();
+    rlImGuiEnd();
+
+    EndDrawing();
+}
+
+void WebApp::handleViewportInput() {
+    const Vector2 mouse = GetMousePosition();
+    const bool overCanvas = CheckCollisionPointRec(mouse, viewport_.canvas);
+    const ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse || io.WantCaptureKeyboard || io.WantTextInput) {
+        touchPanActive_ = false;
+        touchPinchActive_ = false;
+        return;
+    }
+
+    const int touchPoints = GetTouchPointCount();
+    if (touchPoints > 0) {
+        if (touchPoints == 1) {
+            const Vector2 touch = GetTouchPosition(0);
+            if (!CheckCollisionPointRec(touch, viewport_.canvas)) {
+                touchPanActive_ = false;
+                touchPinchActive_ = false;
+                return;
+            }
+
+            if (touchPanActive_) {
+                viewport_.panByScreenDelta({touch.x - lastTouchPosition_.x, touch.y - lastTouchPosition_.y});
+            }
+
+            lastTouchPosition_ = touch;
+            touchPanActive_ = true;
+            touchPinchActive_ = false;
+            return;
+        }
+
+        const Vector2 touchA = GetTouchPosition(0);
+        const Vector2 touchB = GetTouchPosition(1);
+        const Vector2 midpoint = {(touchA.x + touchB.x) * 0.5F, (touchA.y + touchB.y) * 0.5F};
+        if (!CheckCollisionPointRec(midpoint, viewport_.canvas)) {
+            touchPanActive_ = false;
+            touchPinchActive_ = false;
+            return;
+        }
+
+        const float dx = touchA.x - touchB.x;
+        const float dy = touchA.y - touchB.y;
+        const float distance = std::sqrt(dx * dx + dy * dy);
+
+        if (touchPinchActive_) {
+            viewport_.panByScreenDelta({midpoint.x - lastTouchMidpoint_.x, midpoint.y - lastTouchMidpoint_.y});
+            if (lastTouchDistance_ > 0.0F) {
+                const float zoomFactor = std::clamp(distance / lastTouchDistance_, 0.85F, 1.15F);
+                viewport_.zoomAtScreenPoint(zoomFactor, midpoint);
+            }
+        }
+
+        touchPinchActive_ = true;
+        touchPanActive_ = false;
+        lastTouchMidpoint_ = midpoint;
+        lastTouchDistance_ = distance;
+        return;
+    }
+
+    touchPanActive_ = false;
+    touchPinchActive_ = false;
+
+    if (!overCanvas) {
+        return;
+    }
+
+    if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE) || IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+        viewport_.panByScreenDelta(GetMouseDelta());
+    }
+
+    const float wheel = GetMouseWheelMove();
+    if (wheel != 0.0F) {
+        viewport_.zoomAtScreenPoint(1.0F + wheel * 0.12F, mouse);
+    }
+}
+
+void WebApp::drawScene() const {
+    const bool isMobilePortrait = frameMetrics_.touchDevice && frameMetrics_.cssWidth < 600.0F && frameMetrics_.cssHeight > frameMetrics_.cssWidth;
+    const int idLabelFontSize = isMobilePortrait ? 18 : 14;
+    const int altitudeLabelFontSize = isMobilePortrait ? 14 : 12;
+
+    DrawRectangleRounded(viewport_.canvas, 0.02F, 1, Fade(LIGHTGRAY, 0.3F));
+    drawGrid();
+
+    if (showEstimates_) {
+        const auto& samples = runner_.estimatedPositions();
+        const size_t stride = std::max<size_t>(1, samples.size() / std::max(1, maxRenderedEstimates_));
+        for (size_t i = 0; i < samples.size(); i += stride) {
+            const Vector2 p = viewport_.worldToScreen(
+                {static_cast<float>(samples[i].x()), static_cast<float>(samples[i].y())});
+            DrawLineEx({p.x - 3.0F, p.y - 3.0F}, {p.x + 3.0F, p.y + 3.0F}, 1.0F, Fade(RED, 0.3F));
+            DrawLineEx({p.x - 3.0F, p.y + 3.0F}, {p.x + 3.0F, p.y - 3.0F}, 1.0F, Fade(RED, 0.3F));
+        }
+    }
+
+    for (const auto& anchor : anchors_) {
+        const Vector2 w{static_cast<float>(anchor.position.x()), static_cast<float>(anchor.position.y())};
+        const Vector2 s = viewport_.worldToScreen(w);
+        DrawCircleV(s, 5.0F, BLUE);
+        DrawText(TextFormat("A%d", anchor.id), static_cast<int>(s.x - 8.0F), static_cast<int>(s.y + 8.0F),
+                 idLabelFontSize,
+                 DARKBLUE);
+        DrawText(TextFormat("z=%.2f m", anchor.position.z()), static_cast<int>(s.x - 20.0F),
+                 static_cast<int>(s.y + 22.0F), altitudeLabelFontSize, DARKGRAY);
+    }
+
+    const Vector2 gtW{static_cast<float>(params_.truePosition.x()), static_cast<float>(params_.truePosition.y())};
+    const Vector2 gtS = viewport_.worldToScreen(gtW);
+    DrawCircleV(gtS, 6.0F, GREEN);
+    DrawText("GT", static_cast<int>(gtS.x - 8.0F), static_cast<int>(gtS.y + 8.0F), idLabelFontSize, DARKGREEN);
+    DrawText(TextFormat("z=%.2f m", params_.truePosition.z()), static_cast<int>(gtS.x - 20.0F),
+             static_cast<int>(gtS.y + 22.0F), altitudeLabelFontSize, DARKGRAY);
+}
+
+void WebApp::drawGrid() const {
+    const Vector2 topLeft = viewport_.screenToWorld({viewport_.canvas.x, viewport_.canvas.y});
+    const Vector2 bottomRight = viewport_.screenToWorld(
+        {viewport_.canvas.x + viewport_.canvas.width, viewport_.canvas.y + viewport_.canvas.height});
+
+    const int minX = static_cast<int>(std::floor(std::min(topLeft.x, bottomRight.x)));
+    const int maxX = static_cast<int>(std::ceil(std::max(topLeft.x, bottomRight.x)));
+    const int minY = static_cast<int>(std::floor(std::min(topLeft.y, bottomRight.y)));
+    const int maxY = static_cast<int>(std::ceil(std::max(topLeft.y, bottomRight.y)));
+
+    BeginScissorMode(static_cast<int>(viewport_.canvas.x), static_cast<int>(viewport_.canvas.y),
+                     static_cast<int>(viewport_.canvas.width), static_cast<int>(viewport_.canvas.height));
+
+    const Color minorGrid = Fade(GRAY, 0.35F);
+    const Color axisGrid = Fade(GRAY, 0.65F);
+    for (int x = minX; x <= maxX; ++x) {
+        const Vector2 a = viewport_.worldToScreen({static_cast<float>(x), static_cast<float>(minY)});
+        const Vector2 b = viewport_.worldToScreen({static_cast<float>(x), static_cast<float>(maxY)});
+        DrawLineEx(a, b, 1.0F, x == 0 ? axisGrid : minorGrid);
+    }
+    for (int y = minY; y <= maxY; ++y) {
+        const Vector2 a = viewport_.worldToScreen({static_cast<float>(minX), static_cast<float>(y)});
+        const Vector2 b = viewport_.worldToScreen({static_cast<float>(maxX), static_cast<float>(y)});
+        DrawLineEx(a, b, 1.0F, y == 0 ? axisGrid : minorGrid);
+    }
+
+    EndScissorMode();
+}
+
+float WebApp::computeUiScale() const {
+    const bool isTouchDevice = frameMetrics_.touchDevice;
+    const float cssWidth = std::max(1.0F, frameMetrics_.cssWidth);
+    const float cssHeight = std::max(1.0F, frameMetrics_.cssHeight);
+    const bool isPortrait = cssHeight > cssWidth;
+    const float shortestCssEdge = std::min(cssWidth, cssHeight);
+
+    if (!isTouchDevice) {
+        uiScaleTierLabel_ = "desktop";
+        return 1.0F;
+    }
+
+    if (cssWidth < 600.0F && isPortrait) {
+        if (shortestCssEdge < 380.0F) {
+            uiScaleTierLabel_ = "touch-phone-portrait-xl";
+            return 1.0F;
+        }
+        uiScaleTierLabel_ = "touch-phone-portrait";
+        return 1.00F;
+    }
+
+    if (shortestCssEdge < 900.0F) {
+        uiScaleTierLabel_ = "touch-tablet-or-landscape";
+        return 1.0F;
+    }
+
+    uiScaleTierLabel_ = "touch-large";
+    return 1.0F;
+}
+
+void WebApp::applyUiScale(float scale) {
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (!baseStyleCaptured_) {
+        baseStyle_ = style;
+        baseStyleCaptured_ = true;
+    }
+
+    if (std::fabs(appliedUiScale_ - scale) < 0.01F) {
+        return;
+    }
+
+    style = baseStyle_;
+    style.ScaleAllSizes(scale);
+    io.FontGlobalScale = scale;
+    appliedUiScale_ = scale;
+}
+
+void WebApp::drawPanel() {
+    const float cssWidth = std::max(1.0F, frameMetrics_.cssWidth);
+    const float cssHeight = std::max(1.0F, frameMetrics_.cssHeight);
+    const bool isMobileLayout = frameMetrics_.touchDevice && cssWidth < 900.0F;
+    const float uiScale = computeUiScale();
+    applyUiScale(uiScale);
+
+    const float margin = isMobileLayout ? 6.0F : 8.0F;
+    const float layoutWidth = cssWidth;
+    const float layoutHeight = cssHeight;
+
+    const float panelWidth = std::clamp(isMobileLayout ? 300.0F : 280.0F, 240.0F,
+                                        layoutWidth - margin * 2.0F);
+    const float panelHeight = std::clamp(layoutHeight * (isMobileLayout ? 0.60F : 0.52F), 280.0F,
+                                         layoutHeight - margin * 2.0F);
+    const ImVec2 panelDefaultSize{panelWidth, panelHeight};
+
+    const ImVec2 minPanelSize = ImVec2{240.0F, 280.0F};
+    const ImVec2 maxPanelSize = ImVec2{std::max(minPanelSize.x, layoutWidth - margin * 2.0F),
+                                       std::max(minPanelSize.y, layoutHeight - margin * 2.0F)};
+
+    const bool mobilePortrait = isMobileLayout && cssHeight >= cssWidth;
+    const ImVec2 panelAnchor{0.0F, 0.0F};
+    const ImVec2 panelPos{margin, margin};
+    const ImGuiCond panelPosCondition = mobilePortrait ? ImGuiCond_Always : ImGuiCond_FirstUseEver;
+
+    ImGui::SetNextWindowSizeConstraints(minPanelSize, maxPanelSize);
+    ImGui::SetNextWindowPos(panelPos, panelPosCondition, panelAnchor);
+    ImGui::SetNextWindowSize(panelDefaultSize, ImGuiCond_FirstUseEver);
+
+    ImGui::Begin("Multilateration Controls", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+
+    if (ImGui::Button(showUiDebugInfo_ ? "Hide UI Debug" : "Show UI Debug")) {
+        showUiDebugInfo_ = !showUiDebugInfo_;
+    }
+
+    if (showUiDebugInfo_) {
+        ImGui::SeparatorText("UI Debug Metrics");
+        ImGui::Text("CSS viewport: %.0f x %.0f", frameMetrics_.cssWidth, frameMetrics_.cssHeight);
+        ImGui::Text("Framebuffer: %.0f x %.0f", frameMetrics_.framebufferWidth, frameMetrics_.framebufferHeight);
+        ImGui::Text("DPR: %.2f", frameMetrics_.devicePixelRatio);
+        ImGui::Text("Touch device: %s", frameMetrics_.touchDevice ? "yes" : "no");
+        ImGui::Text("UI scale tier: %s (%.2f)", uiScaleTierLabel_, uiScale);
+        ImGui::Separator();
+    }
+
+    if (ImGui::CollapsingHeader("Anchor and GT Configuration", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button("Add Anchor")) {
+            anchors_.push_back({static_cast<int>(anchors_.size()), Eigen::Vector3d::Zero()});
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Remove Last") && !anchors_.empty()) {
+            anchors_.pop_back();
+        }
+
+        for (size_t i = 0; i < anchors_.size(); ++i) {
+            float values[3] = {static_cast<float>(anchors_[i].position.x()), static_cast<float>(anchors_[i].position.y()),
+                               static_cast<float>(anchors_[i].position.z())};
+            if (ImGui::InputFloat3(("A" + std::to_string(i)).c_str(), values, "%.2f")) {
+                anchors_[i].position = Eigen::Vector3d(values[0], values[1], values[2]);
+            }
+        }
+
+        float gt[3] = {static_cast<float>(params_.truePosition.x()), static_cast<float>(params_.truePosition.y()),
+                       static_cast<float>(params_.truePosition.z())};
+        if (ImGui::InputFloat3("GT xyz", gt, "%.2f")) {
+            params_.truePosition = Eigen::Vector3d(gt[0], gt[1], gt[2]);
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Test Parameter Configuration", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::InputDouble("Range Std Dev (m)", &params_.rangeNoiseStdDev, 0.01, 0.1, "%.3f");
+        double rangeOutlierPercentage = params_.rangeOutlierRatio * 100.0;
+        if (ImGui::InputDouble("Range Outlier Percentage", &rangeOutlierPercentage, 0.1, 1.0, "%.1f%%")) {
+            rangeOutlierPercentage = std::clamp(rangeOutlierPercentage, 0.0, 100.0);
+            params_.rangeOutlierRatio = rangeOutlierPercentage / 100.0;
+        }
+        params_.rangeOutlierRatio = std::clamp(params_.rangeOutlierRatio, 0.0, 1.0);
+        if (ImGui::InputDouble("Range Outlier Magnitude (m)", &params_.rangeOutlierMagnitude)) {
+            params_.rangeOutlierMagnitude = std::max(params_.rangeOutlierMagnitude, 0.0);
+        }
+        ImGui::InputDouble("Anchor Pos Std Dev", &params_.anchorPosNoiseStdDev);
+        int numRuns = static_cast<int>(params_.numRuns);
+        ImGui::InputInt("Number of Runs", &numRuns);
+        params_.numRuns = static_cast<size_t>(std::max(1, numRuns));
+
+        bool fixedSeed = params_.randomSeed.has_value();
+        if (ImGui::Checkbox("Use Fixed Seed", &fixedSeed)) {
+            if (!fixedSeed) {
+                params_.randomSeed.reset();
+            } else {
+                params_.randomSeed = 42;
+            }
+        }
+        if (fixedSeed) {
+            long long seed = static_cast<long long>(params_.randomSeed.value_or(42));
+            if (ImGui::InputScalar("Fixed Seed", ImGuiDataType_S64, &seed)) {
+                params_.randomSeed = static_cast<uint64_t>(std::max(0LL, seed));
+            }
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Algorithm Selection", ImGuiTreeNodeFlags_DefaultOpen)) {
+        int selected = static_cast<int>(params_.algorithm);
+        const char* names[] = {
+            "Ordinary Least Squares (Wikipedia)",
+            "Ordinary Least Squares (Wikipedia + BDCSVD)",
+            "Nonlinear Least Squares (Eigen LM)",
+            "Robust Nonlinear Least Squares (Eigen LM + IRLS/Cauchy)",
+            "LLS-I (Yue Wang)",
+            "LLS-II-2 (Yue Wang)",
+            "Two-Step Weighted LLS-I (Yue Wang / Chan-Ho)",
+        };
+        if (ImGui::Combo("Algorithm", &selected, names, IM_ARRAYSIZE(names))) {
+            params_.algorithm = static_cast<AlgorithmId>(selected);
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Simulation Start / Progress", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button("Start Simulation")) {
+            params_.anchorPositions.clear();
+            params_.anchorPositions.reserve(anchors_.size());
+            for (const auto& a : anchors_) params_.anchorPositions.push_back(a.position);
+            runner_.begin(params_);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel")) {
+            runner_.cancel();
+        }
+        ImGui::ProgressBar(static_cast<float>(runner_.progress()), {-1.0F, 0.0F});
+        ImGui::Text("%zu / %zu", runner_.currentRun(), runner_.totalRuns());
+    }
+
+    if (ImGui::CollapsingHeader("CRLB", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::TextWrapped("CRLB assumes independent zero-mean Gaussian range noise with a shared standard deviation, no outliers, and exact anchor positions. The bound is evaluated at the current ground-truth position.");
+
+        if (ImGui::Button("Calculate CRLB")) {
+            params_.anchorPositions.clear();
+            params_.anchorPositions.reserve(anchors_.size());
+            for (const auto& a : anchors_) {
+                params_.anchorPositions.push_back(a.position);
+            }
+
+            const auto result = TrueRangeMultilateration::calculateRangePositionCrlb(
+                params_.anchorPositions,
+                params_.truePosition,
+                params_.rangeNoiseStdDev
+            );
+
+            hasCrlbResult_ = result.valid;
+            crlbMatrix_ = result.crlb;
+            crlbUsedPseudoInverse_ = result.usedPseudoInverse;
+            crlbWarning_ = result.warning;
+        }
+
+        if (hasCrlbResult_) {
+            ImGui::Text("CRLB Matrix:");
+            ImGui::Text("[ % .3g  % .3g  % .3g ]", crlbMatrix_(0, 0), crlbMatrix_(0, 1), crlbMatrix_(0, 2));
+            ImGui::Text("[ % .3g  % .3g  % .3g ]", crlbMatrix_(1, 0), crlbMatrix_(1, 1), crlbMatrix_(1, 2));
+            ImGui::Text("[ % .3g  % .3g  % .3g ]", crlbMatrix_(2, 0), crlbMatrix_(2, 1), crlbMatrix_(2, 2));
+        }
+
+        if (!crlbWarning_.empty() || crlbUsedPseudoInverse_) {
+            const char* warning = crlbWarning_.empty()
+                ? "Fisher information matrix required a pseudo-inverse; the true covariance bound may be unbounded in one or more directions."
+                : crlbWarning_.c_str();
+            ImGui::TextWrapped("Warning: %s", warning);
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Test Results", ImGuiTreeNodeFlags_DefaultOpen)) {
+        const auto& r = runner_.results();
+        ImGui::Text("Mean Absolute Error:\n [%.3f %.3f %.3f]", r.meanAbsError.x(), r.meanAbsError.y(), r.meanAbsError.z());
+        ImGui::Text("Mean Signed Error / Bias:\n [%.3f %.3f %.3f]", r.meanSignedError.x(), r.meanSignedError.y(),
+                    r.meanSignedError.z());
+        ImGui::Text("Max Error:\n [%.3f %.3f %.3f]", r.maxError.x(), r.maxError.y(), r.maxError.z());
+        ImGui::Text("Centered Error Covariance Diagonal:\n [%.6g %.6g %.6g]", r.errorCovariance(0, 0),
+                    r.errorCovariance(1, 1), r.errorCovariance(2, 2));
+        ImGui::Text("Error Second Moment / MSE Diagonal:\n [%.6g %.6g %.6g]", r.errorSecondMoment(0, 0),
+                    r.errorSecondMoment(1, 1), r.errorSecondMoment(2, 2));
+        ImGui::Text("Elapsed: %.1f ms", runner_.elapsedMs());
+    }
+
+    if (ImGui::CollapsingHeader("Visualization / View Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Button("Fit View")) {
+            fitRequested_ = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset View")) {
+            viewport_.center = {0.0F, 0.0F};
+            viewport_.zoom = 30.0F;
+        }
+        ImGui::Checkbox("Show Estimates", &showEstimates_);
+        ImGui::SliderInt("Max Rendered Estimates", &maxRenderedEstimates_, 100, 5000);
+    }
+
+    ImGui::End();
+}
+
+void WebApp::fitView() {
+    std::vector<Vector2> points;
+    points.reserve(anchors_.size() + 1);
+    for (const auto& a : anchors_) {
+        points.push_back({static_cast<float>(a.position.x()), static_cast<float>(a.position.y())});
+    }
+    points.push_back({static_cast<float>(params_.truePosition.x()), static_cast<float>(params_.truePosition.y())});
+    viewport_.fitPoints(points);
+}

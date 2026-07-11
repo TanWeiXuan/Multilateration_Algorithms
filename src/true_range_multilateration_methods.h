@@ -7,6 +7,8 @@
 
 #include <Eigen/Dense>
 
+#include "core/simulation_types.h"
+
 namespace TrueRangeMultilateration
 {
 
@@ -98,12 +100,11 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
 );
 
 /**
- * @brief Computes the Cramer–Rao lower bound (CRLB) for a 3D
- * true-range multilateration problem.
- * @param anchorPositions exact 3D positions of all anchors
- * @param evaluationPosition the 3D point where the bound is evaluated
- * @param rangeStdDev shared standard deviation of the independent Gaussian range noise
- * @return CrlbResult containing the Fisher information matrix, CRLB, rank and any warning
+ * @brief Computes the Cramer-Rao lower bound for 3D true-range multilateration.
+ * @param anchorPositions Exact 3D positions of anchors
+ * @param evaluationPosition 3D position where the bound is evaluated
+ * @param rangeStdDev Shared standard deviation of independent Gaussian range noise
+ * @return CrlbResult containing the Fisher information matrix, CRLB, rank, and any warning
  */
 CrlbResult calculateRangePositionCrlb(
     const std::vector<Eigen::Vector3d>& anchorPositions,

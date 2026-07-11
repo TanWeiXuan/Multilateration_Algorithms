@@ -1,52 +1,24 @@
 # Test Helpers
 
-## Files
+`src/test_helpers.h` and `.cpp` provide measurement generation, anchor perturbation, result aggregation, and console output shared by the CLI and incremental simulation runner.
 
-- `src/test_helpers.h`
-- `src/test_helpers.cpp`
+## Random Generation
 
-## Purpose
+`makeRandomEngine` uses the configured seed when present and `std::random_device` otherwise. Range helpers add Gaussian measurement noise and optional uniformly distributed positive outliers. Anchor helpers add independent Gaussian coordinate noise.
 
-The helper module supports simulation setup, random measurement generation, anchor perturbation, result aggregation, and formatted output.
+Keep deterministic seeds for tests. Validate `rangeOutlierRatio` before calling the helpers; the web UI clamps it to `[0, 1]`.
 
-## Random generation
+## Result Aggregation
 
-### `makeRandomEngine`
+`computeResults` returns zero-initialized results for an empty estimate set. For non-empty samples it computes:
 
-Creates a `std::mt19937_64` random engine. If a seed is supplied, the engine is deterministic. Otherwise, it is seeded from `std::random_device`.
+- Mean signed error (bias).
+- Mean and maximum absolute error per axis.
+- Centered population covariance, `E[(e - E[e])(e - E[e])^T]`.
+- Error second moment/MSE matrix, `E[e e^T]`.
 
-### Range noise helpers
+The covariance and second moment are distinct when the estimator is biased. Preserve that distinction in UI labels and future exports.
 
-The `generateNoisyRange` overloads compute the true Euclidean distance between the target and an anchor, then add Gaussian noise. The outlier-aware overload additionally adds a uniformly distributed positive outlier offset with probability `rangeOutlierRatio`.
+## Output
 
-The `generateNoisyRanges` overloads apply range generation across all anchors and can consume a full `TestParameters` object.
-
-### Anchor noise helpers
-
-The `generateNoisyAnchorPosition` and `generateNoisyAnchorPositions` helpers add independent Gaussian noise to anchor coordinates. They are used by scenario groups that simulate inaccurate anchor placement.
-
-## Result aggregation
-
-### `computeResults`
-
-Computes per-axis errors for all estimated positions relative to `params.truePosition`, then derives:
-
-- Mean signed error.
-- Mean absolute error.
-- Maximum absolute error.
-- Error second moment matrix.
-- Error covariance matrix.
-
-### `computeAndPrintResults`
-
-Convenience wrapper that computes `TestResults` and passes them to `printResults`.
-
-## Printing helpers
-
-### `printTestParams`
-
-Prints the active target position, anchor list, range-noise settings, outlier settings, anchor-position noise, random seed, and run count.
-
-### `printResults`
-
-Prints selected result fields based on `PrintOptions`, including covariance diagonal-only output by default.
+`printTestParams` writes active scenario inputs. `printResults` writes bias and the selected error fields; covariance output also includes the MSE/second-moment matrix or diagonal. `computeAndPrintResults` combines aggregation and formatting.

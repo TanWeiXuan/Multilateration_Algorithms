@@ -1,41 +1,39 @@
-# Dependencies and Vendored Libraries
+# Dependencies
 
 ## Eigen
 
-The repository vendors Eigen 5.0.0 under `libs/eigen-5.0.0/`.
+Eigen 5.0.0 is vendored under `libs/eigen-5.0.0`. It supplies vector/matrix types, dense decompositions, SVD solvers, eigensolvers, and the unsupported Levenberg-Marquardt implementation.
 
-Eigen is used for:
+`libs/CMakeLists.txt` declares:
 
-- `Eigen::Vector3d` and other vector/matrix types.
-- Dense matrix algebra.
-- `BDCSVD` least-squares solves.
-- Matrix decompositions and inverses.
-- Unsupported nonlinear optimization support for Levenberg-Marquardt.
+- `Eigen`, which exposes the main and unsupported Eigen include roots.
+- `EigenUnsupported`, which links transitively to `Eigen` for code using unsupported modules.
 
-## CMake interface targets
+When updating Eigen, change the vendored directory and CMake include paths together, then run native validation and every estimator because decomposition and unsupported APIs may change.
 
-The `libs/CMakeLists.txt` file creates two intended interface targets:
+## Web Submodules
 
-- `Eigen`: exposes the main Eigen include directory.
-- `EigenUnsupported`: intended to expose unsupported Eigen headers and link to `Eigen`.
+The web frontend uses Git submodules:
 
-## Standard library requirements
+| Path | Upstream | Purpose |
+| --- | --- | --- |
+| `external/raylib` | `raysan5/raylib` | Rendering, input, and browser platform support. |
+| `external/imgui` | `ocornut/imgui` | Immediate-mode control panel. |
+| `external/rlimgui` | `raylib-extras/rlImGui` | Raylib/ImGui integration. |
 
-The project uses C++20 and includes features such as:
+Initialize them with:
 
-- `std::format`
-- `std::optional`
-- `std::function`
-- Standard random-number facilities
-- Standard chrono timing utilities
+```bash
+git submodule update --init --recursive
+```
 
-A compiler and standard library with working C++20 `std::format` support are required.
+Dependency updates should be isolated commits that move one submodule pointer at a time when practical. Record the upstream version/commit, build native and web targets, and smoke-test rendering and input before merging.
 
-## Dependency update notes
+## Toolchain Requirements
 
-When updating Eigen:
+- CMake 3.15 or newer.
+- A C++20 compiler and standard library with `std::format`.
+- Emscripten for web builds.
+- Git submodule support for web dependencies.
 
-1. Replace or add the vendored Eigen directory under `libs/`.
-2. Update `libs/CMakeLists.txt` include paths.
-3. Rebuild and run the executable because SVD and unsupported nonlinear optimization APIs can change between versions.
-4. Verify that unsupported modules are actually available through the configured include directories.
+The native core and CLI do not link Raylib or ImGui; those dependencies are activated only when `MULTILAT_BUILD_WEBAPP=ON`.

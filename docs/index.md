@@ -1,46 +1,46 @@
 # Multilateration Algorithms Documentation
 
-This repository contains C++ implementations and evaluation utilities for **true-range multilateration** in 3D. Given a set of known anchor positions and measured distances from those anchors to an unknown target, the code estimates the target position and compares several linear, nonlinear, weighted, robust, and lower-bound analysis approaches.
+This documentation covers the shared C++ multilateration core, native CLI, interactive web application, and the maintenance process that keeps `main` and `pages` synchronized.
 
-The project is intentionally compact: a single CMake-built executable (`main`) configures a simulation scenario, runs the implemented algorithms over many Monte Carlo trials, and prints error and timing summaries. Eigen 5.0.0 is vendored under `libs/` and is used for dense linear algebra, SVD-based least-squares solves, and unsupported nonlinear optimization routines.
+## Choose a Starting Point
 
-## Repository map
+### Users
 
-| Area | Purpose | Detailed documentation |
-| --- | --- | --- |
-| `CMakeLists.txt`, `src/CMakeLists.txt`, `libs/CMakeLists.txt` | Defines the C++20 CMake project, builds the `main` executable, and exposes vendored Eigen targets. | [Build system](build-system.md) |
-| `src/main.cpp` | Entry point that defines the default 3D target/anchor simulation, noise settings, random seed, run count, and launches tests. | [Executable and simulation entry point](main.md) |
-| `src/true_range_multilateration_methods.h/.cpp` | Core multilateration algorithms and CRLB calculation. | [Algorithms module](algorithms.md) |
-| `src/tests.h/.cpp` | Test harness types and orchestration for validating helpers, running scenario sets, and timing algorithm calls. | [Test harness](test-harness.md) |
-| `src/test_helpers.h/.cpp` | Random-noise generation, outlier simulation, anchor perturbation, result aggregation, and formatted output helpers. | [Test helpers](test-helpers.md) |
-| `libs/eigen-5.0.0/` | Vendored Eigen dependency, including unsupported modules needed by the Levenberg-Marquardt solver. | [Dependencies and vendored libraries](dependencies.md) |
-| Project roadmap and known issues | Future improvements, incomplete features, critical bugs, and notes for maintainers. | [Future plans and known issues](future-plans.md) |
+1. [Build System](build-system.md) for native and web build commands.
+2. [Algorithms](algorithms.md) for implemented estimators and input expectations.
+3. [CLI and Default Simulation](main.md) or the [live web application](https://tanweixuan.github.io/Multilateration_Algorithms/).
 
-## High-level execution flow
+### Contributors
 
-1. `main.cpp` creates a `TrueRangeMultilateration::TestParameters` object with a true target position, eight 3D anchors, Gaussian range noise, outlier settings, seed, and number of Monte Carlo runs.
-2. `runTests` performs small validation checks for result aggregation and CRLB computation.
-3. `runTests` executes three scenario groups: nominal range noise, range noise with anchor-position noise, and range noise with range outliers.
-4. For each scenario, `runTest` repeatedly generates noisy inputs, calls one multilateration method, collects estimates, prints error summaries, and reports total/average runtime.
-5. Helper functions compute mean absolute error, signed error, second moment, and covariance-like error statistics.
+1. [Contributing](contributing.md) for setup, development loops, and the pull-request checklist.
+2. [Architecture](architecture.md) for component boundaries and data flow.
+3. [Test Harness](test-harness.md) and [Test Helpers](test-helpers.md) for validation and simulation behavior.
 
-## Implemented estimation methods
+### Maintainers
 
-- Ordinary least squares based on the Wikipedia true-range multilateration derivation.
-- SVD-backed variant of the ordinary least-squares method.
-- Nonlinear least squares using Eigen's Levenberg-Marquardt implementation.
-- Robust nonlinear least squares using iteratively reweighted least squares and Cauchy-style weighting.
-- Yue Wang LLS-I linear least squares.
-- Yue Wang LLS-II-2 linear least squares using the shortest range as reference.
-- Yue Wang / Chan-Ho two-step weighted linear least squares.
-- Cramer-Rao lower-bound support for 3D range-only localization.
+1. [Branching and Releases](branching-and-releases.md) for the `main`/`pages` contract and deployment procedure.
+2. [Web Deployment](web-deployment.md) for Emscripten and GitHub Pages behavior.
+3. [Dependencies](dependencies.md), [Troubleshooting](troubleshooting.md), and [Future Plans](future-plans.md).
 
-## Quick build and run
+## Repository Map
+
+| Area | Purpose |
+| --- | --- |
+| `src/true_range_multilateration_methods.*` | Estimation algorithms and CRLB calculation. |
+| `src/core/` | Shared types, algorithm dispatch, and incremental simulation. |
+| `src/cli/` and `src/tests.*` | Native launcher, deterministic validation, and benchmark scenarios. |
+| `src/web/` | Raylib/ImGui web frontend and Emscripten integration. |
+| `libs/` | Vendored Eigen and its CMake interface targets. |
+| `external/` | Git submodules used only by the web frontend. |
+| `.github/workflows/` | Native validation and Pages build/deployment automation. |
+
+## Quick Native Build
 
 ```bash
-cmake -S . -B build
-cmake --build build
+git submodule update --init --recursive
+cmake -S . -B build -DMULTILAT_BUILD_CLI=ON -DMULTILAT_BUILD_WEBAPP=OFF
+cmake --build build --config Release --target main
 ./build/bin/main
 ```
 
-The executable performs the simulation configured in `src/main.cpp` and prints results to standard output.
+Use a Debug configuration when relying on the CLI's assertion-based validation checks.

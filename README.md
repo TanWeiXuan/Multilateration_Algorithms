@@ -1,105 +1,53 @@
 # Multilateration Algorithms
-A collection of the implementation of various [True-range Multilateration](https://en.wikipedia.org/wiki/True-range_multilateration) algoritms in C++ using Eigen.
 
+A collection of [true-range multilateration](https://en.wikipedia.org/wiki/True-range_multilateration) algorithms implemented in C++20 with Eigen.
 
-**True-range multilateration** is a method to determine the position of a point in space by using multiple ranges between the point and known locations (anchors).
+True-range multilateration estimates an unknown position from measured distances to known anchor positions. This repository provides reusable algorithm and simulation code, a command-line test harness, and an interactive web application.
 
-## Methods
+## Implemented Methods
 
-This repository implements the following multilateration methods:
+- `ordinaryLeastSquaresWikipedia`: linearized ordinary least squares. It requires non-coplanar anchors.
+- `ordinaryLeastSquaresWikipedia2`: an SVD-backed variant that also supports coplanar layouts.
+- `nonLinearLeastSquaresEigenLevenbergMarquardt`: nonlinear refinement with Eigen's Levenberg-Marquardt solver.
+- `robustNonLinearLeastSquaresEigenLevenbergMarquardt`: iteratively reweighted nonlinear least squares using Cauchy-style weights.
+- `linearLeastSquaresI_YueWang`: the LLS-I method described by Yue Wang (2015).
+- `linearLeastSquaresII_2_YueWang`: the shortest-range-reference LLS-II-2 method described by Yue Wang (2015).
+- `twoStepWeightedLinearLeastSquaresI_YueWang`: the Yue Wang / Chan-Ho two-step weighted estimator.
+- `calculateRangePositionCrlb`: Fisher-information and Cramer-Rao lower-bound analysis, including rank-deficient geometry reporting.
 
-### 1. ordinaryLeastSquaresWikipedia
-Uses ordinary least squares to solve the linearised multilateration problem. This method is based on the general multilateration approach described in the [Wikipedia article](https://en.wikipedia.org/wiki/True-range_multilateration#General_Multilateration). 
-
-**Note:** The solver fails if anchors are coplanar.
-
-**Signature:**
-```cpp
-Eigen::Vector3d ordinaryLeastSquaresWikipedia(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
-    const std::vector<double>& ranges
-);
-```
-
-### 2. ordinaryLeastSquaresWikipedia2
-Uses ordinary least squares to solve the linearised multilateration problem with Eigen's BDCSVD (Bidiagonal Divide and Conquer Singular Value Decomposition). This method is based on the same approach as `ordinaryLeastSquaresWikipedia` but uses a more numerically stable solver.
-
-**Note:** This method works even if anchors are coplanar, making it more robust than the first method.
-
-**Signature:**
-```cpp
-Eigen::Vector3d ordinaryLeastSquaresWikipedia2(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
-    const std::vector<double>& ranges
-);
-```
-
-### 3. nonLinearLeastSquaresEigenLevenbergMarquardt
-Uses Eigen's Levenberg-Marquardt implementation to solve the non-linear least squares problem. This method provides an iterative optimization approach that refines the position estimate by minimizing the residual errors between measured and modeled ranges.
-
-**Signature:**
-```cpp
-Eigen::Vector3d nonLinearLeastSquaresEigenLevenbergMarquardt(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
-    const std::vector<double>& ranges
-);
-```
-
-### 4. robustNonLinearLeastSquaresEigenLevenbergMarquardt
-A robust version of the non-linear least squares method that uses Eigen's Levenberg-Marquardt implementation with robust loss functions using an iteratively reweighted least squares (IRLS) approach. This method is more resilient to outliers in the range measurements by applying Cauchy weighting to reduce the influence of erroneous data points.
-
-**Signature:**
-```cpp
-Eigen::Vector3d robustNonLinearLeastSquaresEigenLevenbergMarquardt(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
-    const std::vector<double>& ranges,
-    const double rangeStdDev,
-    const double robustLossParam
-);
-```
-
-### 5. linearLeastSquaresI_YueWang
-A linear least squares method (LLS-I) based on the paper "Linear least squares localization in sensor networks" by Yue Wang (2015). This method solves a linearized version of the multilateration problem by formulating it as an overdetermined system.
-
-**Signature:**
-```cpp
-Eigen::Vector3d linearLeastSquaresI_YueWang(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
-    const std::vector<double>& ranges
-);
-```
-
-
-### 6. linearLeastSquaresII_2_YueWang
-A linear least squares method (LLS-II-2) also from "Linear least squares localization in sensor networks" by Yue Wang (2015). This method solves a linearized version of the multilateration problem by formulating it as an overdetermined system. The system is linearized by subtracting the nonlinear expression for the shortest range measurement to its corresponding anchor.
-
-**Signature:**
-```cpp
-Eigen::Vector3d linearLeastSquaresII_2_YueWang(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
-    const std::vector<double>& ranges
-);
-```
-
-### 7. twoStepWeightedLinearLeastSquaresI_YueWang
-A two-step weighted linear least squares method (TS-WLLS-I) from "Linear least squares localization in sensor networks" by Yue Wang (2015), originally developed and proposed in "A Simple and Efficient Estimator for Hyperbolic Location" by Y. T. Chan and K. C. Ho (1994). This method performs position estimation in two steps: the first step uses weighted linear least squares to obtain an initial estimate, and the second step refines the solution by utilizing the constraint of the dummy variable (R² = x² + y² + z²). The weighting takes into account the standard deviations of range measurements to improve estimation accuracy.
-
-**Signature:**
-```cpp
-Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
-    const std::vector<Eigen::Vector3d>& anchorPositions,
-    const std::vector<double>& ranges,
-    const std::vector<double>& rangeStdDevs
-);
-```
-
-
-
+See [Algorithms](docs/algorithms.md) for signatures and input expectations.
 
 ## Web App
 
-An interactive web application is available to experiment with the multilateration
-algorithms.  It exposes the same functionality as the command-line tests—such
-as configurable anchor noise, robust loss functions and noise parameters—and
-lets you visualise how different algorithms behave under varying conditions.
-Check the repository’s `pages` branch for the source code of the web app.
+Use the [interactive web application](https://tanweixuan.github.io/Multilateration_Algorithms/) to compare algorithms with configurable anchors, noise, and outliers. Web source lives alongside the CLI source on `main`; `pages` is only the deployment branch.
+
+## Build and Run
+
+Clone with submodules, then build the native CLI:
+
+```bash
+git clone --recurse-submodules https://github.com/TanWeiXuan/Multilateration_Algorithms.git
+cd Multilateration_Algorithms
+cmake -S . -B build -DMULTILAT_BUILD_CLI=ON -DMULTILAT_BUILD_WEBAPP=OFF
+cmake --build build --config Release
+./build/bin/main
+```
+
+On Windows with a multi-configuration generator, run `build\\bin\\Release\\main.exe`.
+
+Web builds require Emscripten:
+
+```bash
+emcmake cmake -S . -B build-web -DMULTILAT_BUILD_CLI=OFF -DMULTILAT_BUILD_WEBAPP=ON
+cmake --build build-web --config Release --target multilat_web
+```
+
+See [Build System](docs/build-system.md) and [Web Deployment](docs/web-deployment.md) for details.
+
+## Documentation and Contributing
+
+Start with the [documentation index](docs/index.md). New contributors should read the [contribution guide](docs/contributing.md). Maintainers should also review the [branching and release process](docs/branching-and-releases.md), [web deployment guide](docs/web-deployment.md), and [troubleshooting guide](docs/troubleshooting.md).
+
+## License
+
+See [LICENSE](LICENSE).

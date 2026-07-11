@@ -1,0 +1,70 @@
+name: pages-webapp
+
+on:
+  push:
+    branches: [pages]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+
+      - name: Configure
+        run: emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release -DMULTILAT_BUILD_WEBAPP=ON -DMULTILAT_BUILD_CLI=OFF
+
+      - name: Build
+        run: cmake --build build-web --config Release --target multilat_web
+
+      - name: Stage and verify Pages artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s build-web/bin/index.html
+          test -s build-web/bin/index.js
+          test -s build-web/bin/index.wasm
+
+          mkdir -p dist-pages
+          cp build-web/bin/index.html dist-pages/
+          cp build-web/bin/index.js dist-pages/
+          cp build-web/bin/index.wasm dist-pages/
+          touch dist-pages/.nojekyll
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist-pages
+
+  deploy:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/pages')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
