@@ -331,7 +331,10 @@ void WebApp::drawPanel() {
         if (ImGui::InputDouble("Range Outlier Magnitude (m)", &params_.rangeOutlierMagnitude)) {
             params_.rangeOutlierMagnitude = std::max(params_.rangeOutlierMagnitude, 0.0);
         }
-        ImGui::InputDouble("Anchor Pos Std Dev", &params_.anchorPosNoiseStdDev);
+        ImGui::InputDouble("Anchor Pos Std Dev (m)", &params_.anchorPosNoiseStdDev, 0.01, 0.1, "%.3f");
+        if (!std::isfinite(params_.anchorPosNoiseStdDev) || params_.anchorPosNoiseStdDev < 0.0) {
+            params_.anchorPosNoiseStdDev = 0.0;
+        }
         int numRuns = static_cast<int>(params_.numRuns);
         ImGui::InputInt("Number of Runs", &numRuns);
         params_.numRuns = static_cast<size_t>(std::max(1, numRuns));
@@ -384,7 +387,7 @@ void WebApp::drawPanel() {
     }
 
     if (ImGui::CollapsingHeader("CRLB", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::TextWrapped("CRLB assumes independent zero-mean Gaussian range noise with a shared standard deviation, no outliers, and exact anchor positions. The bound is evaluated at the current ground-truth position.");
+        ImGui::TextWrapped("CRLB assumes independent zero-mean Gaussian range noise and independent, zero-mean, isotropic Gaussian coordinate errors for the configured anchor means. Range outliers are not represented. This is a local first-order bound evaluated at the current ground-truth position and configured anchor means.");
 
         if (ImGui::Button("Calculate CRLB")) {
             params_.anchorPositions.clear();
@@ -396,7 +399,8 @@ void WebApp::drawPanel() {
             const auto result = TrueRangeMultilateration::calculateRangePositionCrlb(
                 params_.anchorPositions,
                 params_.truePosition,
-                params_.rangeNoiseStdDev
+                params_.rangeNoiseStdDev,
+                params_.anchorPosNoiseStdDev
             );
 
             hasCrlbResult_ = result.valid;

@@ -101,7 +101,12 @@ Eigen::Vector3d twoStepWeightedLinearLeastSquaresI_YueWang(
 
 /**
  * @brief Computes the Cramer-Rao lower bound for 3D true-range multilateration.
- * @param anchorPositions Exact 3D positions of anchors
+ *
+ * This source-compatible overload treats the supplied anchor positions as exact.
+ * It is equivalent to calling the full-covariance overload with a zero 3N x 3N
+ * anchor-position covariance matrix.
+ *
+ * @param anchorPositions Exact 3D positions of anchors, in metres
  * @param evaluationPosition 3D position where the bound is evaluated
  * @param rangeStdDev Shared standard deviation of independent Gaussian range noise
  * @return CrlbResult containing the Fisher information matrix, CRLB, rank, and any warning
@@ -110,6 +115,50 @@ CrlbResult calculateRangePositionCrlb(
     const std::vector<Eigen::Vector3d>& anchorPositions,
     const Eigen::Vector3d& evaluationPosition,
     double rangeStdDev
+);
+
+/**
+ * @brief Computes the local CRLB with independent isotropic anchor-position uncertainty.
+ *
+ * Each anchor coordinate is modeled as an independent, zero-mean Gaussian error
+ * with the shared standard deviation @p anchorPositionStdDev. A value of zero
+ * reproduces the exact-anchor overload.
+ *
+ * @param anchorPositions Nominal/mean 3D anchor positions, in metres
+ * @param evaluationPosition 3D position where the bound is evaluated, in metres
+ * @param rangeStdDev Shared standard deviation of independent Gaussian range noise, in metres
+ * @param anchorPositionStdDev Shared anchor-coordinate standard deviation, in metres; finite and nonnegative
+ * @return CrlbResult containing the Fisher information matrix, CRLB, rank, and any warning
+ */
+CrlbResult calculateRangePositionCrlb(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const Eigen::Vector3d& evaluationPosition,
+    double rangeStdDev,
+    double anchorPositionStdDev
+);
+
+/**
+ * @brief Computes the local CRLB with a general anchor-position covariance.
+ *
+ * The anchor perturbations are stacked as [delta_a1; ...; delta_aN]. The
+ * corresponding covariance must be a finite, symmetric, positive-semidefinite
+ * 3N x 3N matrix in the anchors' global coordinate frame, with units of m^2.
+ * Off-diagonal blocks may describe correlations between different anchors.
+ * The implementation uses the first-order effective range covariance
+ * S = sigma_r^2 I + B C_a B^T and J = U^T S^-1 U without explicitly forming
+ * S^-1. See docs/crlb.md for the derivation and limitations.
+ *
+ * @param anchorPositions Nominal/mean 3D anchor positions, in metres
+ * @param evaluationPosition 3D position where the bound is evaluated, in metres
+ * @param rangeStdDev Shared standard deviation of independent Gaussian range noise, in metres
+ * @param anchorPositionCovariance Full 3N x 3N anchor-position covariance, in square metres
+ * @return CrlbResult containing the Fisher information matrix, CRLB, rank, and any warning
+ */
+CrlbResult calculateRangePositionCrlb(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const Eigen::Vector3d& evaluationPosition,
+    double rangeStdDev,
+    const Eigen::MatrixXd& anchorPositionCovariance
 );
 
 } // namespace TrueRangeMultilateration

@@ -31,10 +31,15 @@ struct CrlbResult {
 
 struct TestParameters {
     Eigen::Vector3d truePosition = Eigen::Vector3d::Zero();
+    // True physical anchor positions and the mean coordinate layout. Ranges are
+    // generated from these positions; anchorPosNoiseStdDev perturbs only the
+    // coordinates supplied to the estimator.
     std::vector<Eigen::Vector3d> anchorPositions = {};
     double rangeNoiseStdDev = 0.0;
     double rangeOutlierRatio = 0.0;
     double rangeOutlierMagnitude = 0.0;
+    // Independent zero-mean Gaussian standard deviation for every anchor
+    // coordinate (X, Y, and Z), in metres.
     double anchorPosNoiseStdDev = 0.0;
     std::optional<uint64_t> randomSeed = std::nullopt;
     size_t numRuns = 1;

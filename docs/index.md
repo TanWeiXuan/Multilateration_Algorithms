@@ -8,7 +8,8 @@ This documentation covers the shared C++ multilateration core, native CLI, inter
 
 1. [Build System](build-system.md) for native and web build commands.
 2. [Algorithms](algorithms.md) for implemented estimators and input expectations.
-3. [CLI and Default Simulation](main.md) or the [live web application](https://tanweixuan.github.io/Multilateration_Algorithms/).
+3. [CRLB with Anchor-Position Uncertainty](crlb.md) for the bound's derivation and interpretation.
+4. [CLI and Default Simulation](main.md) or the [live web application](https://tanweixuan.github.io/Multilateration_Algorithms/).
 
 ### Contributors
 

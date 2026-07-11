@@ -13,9 +13,9 @@ True-range multilateration estimates an unknown position from measured distances
 - `linearLeastSquaresI_YueWang`: the LLS-I method described by Yue Wang (2015).
 - `linearLeastSquaresII_2_YueWang`: the shortest-range-reference LLS-II-2 method described by Yue Wang (2015).
 - `twoStepWeightedLinearLeastSquaresI_YueWang`: the Yue Wang / Chan-Ho two-step weighted estimator.
-- `calculateRangePositionCrlb`: Fisher-information and Cramer-Rao lower-bound analysis, including rank-deficient geometry reporting.
+- `calculateRangePositionCrlb`: Fisher-information and Cramer-Rao lower-bound analysis with optional isotropic or full correlated anchor-position covariance, including rank-deficient geometry reporting.
 
-See [Algorithms](docs/algorithms.md) for signatures and input expectations.
+See [Algorithms](docs/algorithms.md) for signatures and input expectations, and [CRLB with Anchor-Position Uncertainty](docs/crlb.md) for the mathematical model and API examples.
 
 ## Web App
 

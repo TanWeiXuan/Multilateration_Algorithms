@@ -26,22 +26,25 @@ void SimulationRunner::step(const size_t maxIterationsPerFrame) {
     try {
         const size_t end = std::min(params_.numRuns, currentRun_ + maxIterationsPerFrame);
         for (; currentRun_ < end; ++currentRun_) {
-            std::vector<Eigen::Vector3d> anchorPositions = params_.anchorPositions;
-            if (params_.anchorPosNoiseStdDev > 0.0) {
-                anchorPositions = generateNoisyAnchorPositions(params_.anchorPositions, params_.anchorPosNoiseStdDev, rng_);
-            }
-
             const auto noisyRanges = generateNoisyRanges(
                 params_.truePosition,
-                anchorPositions,
+                params_.anchorPositions,
                 params_.rangeNoiseStdDev,
                 params_.rangeOutlierRatio,
                 params_.rangeOutlierMagnitude,
                 rng_);
 
+            std::vector<Eigen::Vector3d> estimatedAnchorPositions = params_.anchorPositions;
+            if (params_.anchorPosNoiseStdDev > 0.0) {
+                estimatedAnchorPositions = generateNoisyAnchorPositions(
+                    params_.anchorPositions,
+                    params_.anchorPosNoiseStdDev,
+                    rng_);
+            }
+
             estimatedPositions_.push_back(runAlgorithm(
                 params_.algorithm,
-                anchorPositions,
+                estimatedAnchorPositions,
                 noisyRanges,
                 params_.rangeNoiseStdDev));
         }

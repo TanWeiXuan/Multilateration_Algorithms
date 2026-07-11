@@ -26,6 +26,8 @@ The repository has one shared C++ core and two frontends. The command-line front
 
 The CLI's `runTests` exercises every estimator and includes assertion-based validation. The web app uses `SimulationRunner::step` to bound work per frame.
 
+`TestParameters::anchorPositions` are the physical anchors used for range generation and the mean surveyed layout. Anchor-position noise perturbs only the coordinates passed to an estimator, so it models coordinate/survey error rather than physical anchor motion.
+
 ## Ownership Rules
 
 - Put new reusable estimator behavior in the shared core, never directly in a frontend.

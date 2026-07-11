@@ -4,14 +4,14 @@
 
 `src/cli/main.cpp` constructs a deterministic `TestParameters` scenario and calls `TrueRangeMultilateration::runTests`.
 
-The default target is `(0, 0, 5)` and eight anchors occupy the corners of a 10-by-10-by-10 metre volume. Range noise has a 0.25 metre standard deviation, the seed is `42`, and each algorithm/scenario pair runs 10,000 estimates.
+The default target is `(0, 0, 5)` and eight anchors occupy the corners of a 10-by-10-by-10 metre volume. Range noise has a 0.25 metre standard deviation, the seed is `42`, and each algorithm/scenario pair runs 500 estimates.
 
 ## Execution
 
 The CLI first runs assertion-based checks for result aggregation and CRLB behavior, then compares every estimator under:
 
 1. Gaussian range noise.
-2. Range and anchor-position noise.
+2. Range noise and anchor-coordinate/survey error. Ranges use the true physical anchors, while independently perturbed coordinates are supplied to the estimator.
 3. Range noise with simulated outliers.
 
 Output includes mean absolute error, signed bias, maximum error, centered covariance, error second moment/MSE, and elapsed time.

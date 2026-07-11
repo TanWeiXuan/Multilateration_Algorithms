@@ -1,6 +1,7 @@
 #include "tests.h"
 #include "test_helpers.h"
 #include "true_range_multilateration_methods.h"
+#include "core/simulation_runner.h"
 
 #include <cassert>
 #include <chrono>
@@ -61,7 +62,7 @@ void runComputeResultsValidationTests()
         assertApprox(results.errorSecondMoment(0, 0), 1.0);
     }
 
-    std::cout << "computeResults validation tests passed.\n";
+    std::cout << "computeResults validation tests passed.\n" << std::flush;
 }
 
 void runCrlbValidationTests()
@@ -78,12 +79,122 @@ void runCrlbValidationTests()
     };
     const Eigen::Vector3d truePosition(0.0, 0.0, 5.0);
 
-    const CrlbResult validResult = calculateRangePositionCrlb(defaultAnchors, truePosition, 0.05);
-    assert(validResult.valid);
-    assert(validResult.rank == 3);
-    assert(!validResult.usedPseudoInverse);
-    assert(validResult.crlb.isApprox(validResult.crlb.transpose(), 1e-12));
-    assert(validResult.crlb.diagonal().minCoeff() >= -1e-12);
+    constexpr double rangeStdDev = 0.5;
+    const Eigen::Index covarianceDimension = 3 * static_cast<Eigen::Index>(defaultAnchors.size());
+    const Eigen::MatrixXd zeroCovariance = Eigen::MatrixXd::Zero(covarianceDimension, covarianceDimension);
+
+    // Backward compatibility: exact-anchor, zero-isotropic, and zero-covariance APIs agree.
+    const CrlbResult exactResult = calculateRangePositionCrlb(defaultAnchors, truePosition, rangeStdDev);
+    const CrlbResult zeroIsotropicResult = calculateRangePositionCrlb(
+        defaultAnchors,
+        truePosition,
+        rangeStdDev,
+        0.0
+    );
+    const CrlbResult zeroCovarianceResult = calculateRangePositionCrlb(
+        defaultAnchors,
+        truePosition,
+        rangeStdDev,
+        zeroCovariance
+    );
+    assert(exactResult.valid);
+    assert(exactResult.rank == 3);
+    assert(!exactResult.usedPseudoInverse);
+    assert(exactResult.crlb.isApprox(exactResult.crlb.transpose(), 1e-12));
+    assert(exactResult.crlb.diagonal().minCoeff() >= -1e-12);
+    assert(exactResult.fisherInformation.isApprox(zeroIsotropicResult.fisherInformation, 1e-12));
+    assert(exactResult.crlb.isApprox(zeroIsotropicResult.crlb, 1e-12));
+    assert(exactResult.fisherInformation.isApprox(zeroCovarianceResult.fisherInformation, 1e-12));
+    assert(exactResult.crlb.isApprox(zeroCovarianceResult.crlb, 1e-12));
+
+    // Independent isotropic uncertainty has the closed-form scalar scaling.
+    constexpr double anchorPositionStdDev = 0.25;
+    const CrlbResult isotropicResult = calculateRangePositionCrlb(
+        defaultAnchors,
+        truePosition,
+        rangeStdDev,
+        anchorPositionStdDev
+    );
+    const double informationScale =
+        (rangeStdDev * rangeStdDev)
+        / (rangeStdDev * rangeStdDev + anchorPositionStdDev * anchorPositionStdDev);
+    const double crlbScale = 1.0 / informationScale;
+    assert(isotropicResult.valid);
+    assert(isotropicResult.fisherInformation.isApprox(
+        informationScale * exactResult.fisherInformation,
+        1e-11
+    ));
+    assert(isotropicResult.crlb.isApprox(crlbScale * exactResult.crlb, 1e-11));
+
+    // Only the line-of-sight projection of an independent anchor covariance contributes.
+    const std::vector<Eigen::Vector3d> axisAnchors = {
+        Eigen::Vector3d(-1.0,  0.0,  0.0),
+        Eigen::Vector3d( 0.0, -1.0,  0.0),
+        Eigen::Vector3d( 0.0,  0.0, -1.0),
+        Eigen::Vector3d( 1.0,  0.0,  0.0),
+        Eigen::Vector3d( 0.0,  1.0,  0.0),
+        Eigen::Vector3d( 0.0,  0.0,  1.0),
+    };
+    Eigen::MatrixXd anisotropicCovariance = Eigen::MatrixXd::Zero(18, 18);
+    anisotropicCovariance.block<3, 3>(0, 0) = Eigen::Vector3d(4.0, 0.0, 0.0).asDiagonal();
+    anisotropicCovariance.block<3, 3>(3, 3) = Eigen::Vector3d(9.0, 0.0, 0.0).asDiagonal();
+    const CrlbResult anisotropicResult = calculateRangePositionCrlb(
+        axisAnchors,
+        Eigen::Vector3d::Zero(),
+        2.0,
+        anisotropicCovariance
+    );
+    Eigen::Matrix3d expectedAnisotropicInformation = Eigen::Matrix3d::Zero();
+    expectedAnisotropicInformation.diagonal() << 3.0 / 8.0, 1.0 / 2.0, 1.0 / 2.0;
+    assert(anisotropicResult.valid);
+    assert(anisotropicResult.fisherInformation.isApprox(expectedAnisotropicInformation, 1e-12));
+
+    // A positive-semidefinite cross-anchor block must produce the general U^T S^-1 U result.
+    Eigen::MatrixXd correlatedCovariance = 0.04 * Eigen::MatrixXd::Identity(
+        covarianceDimension,
+        covarianceDimension
+    );
+    correlatedCovariance.block<3, 3>(0, 3) = 0.01 * Eigen::Matrix3d::Identity();
+    correlatedCovariance.block<3, 3>(3, 0) = 0.01 * Eigen::Matrix3d::Identity();
+    Eigen::MatrixXd U(defaultAnchors.size(), 3);
+    Eigen::MatrixXd B = Eigen::MatrixXd::Zero(defaultAnchors.size(), covarianceDimension);
+    for (Eigen::Index i = 0; i < static_cast<Eigen::Index>(defaultAnchors.size()); ++i) {
+        const Eigen::Vector3d delta = truePosition - defaultAnchors[static_cast<size_t>(i)];
+        const Eigen::Vector3d u = delta.normalized();
+        U.row(i) = u.transpose();
+        B.block<1, 3>(i, 3 * i) = -u.transpose();
+    }
+    Eigen::MatrixXd S = rangeStdDev * rangeStdDev
+        * Eigen::MatrixXd::Identity(defaultAnchors.size(), defaultAnchors.size())
+        + B * correlatedCovariance * B.transpose();
+    S = 0.5 * (S + S.transpose());
+    const Eigen::Matrix3d expectedCorrelatedInformation = U.transpose() * S.llt().solve(U);
+    const CrlbResult correlatedResult = calculateRangePositionCrlb(
+        defaultAnchors,
+        truePosition,
+        rangeStdDev,
+        correlatedCovariance
+    );
+    assert(correlatedResult.valid);
+    assert(correlatedResult.fisherInformation.isApprox(expectedCorrelatedInformation, 1e-11));
+
+    // Increasing isotropic anchor uncertainty decreases information and increases the bound.
+    const CrlbResult lowerUncertaintyResult = calculateRangePositionCrlb(
+        defaultAnchors,
+        truePosition,
+        rangeStdDev,
+        0.1
+    );
+    const CrlbResult higherUncertaintyResult = calculateRangePositionCrlb(
+        defaultAnchors,
+        truePosition,
+        rangeStdDev,
+        0.6
+    );
+    assert(lowerUncertaintyResult.valid && higherUncertaintyResult.valid);
+    assert(higherUncertaintyResult.crlb.trace() > lowerUncertaintyResult.crlb.trace());
+    assert(higherUncertaintyResult.fisherInformation.trace()
+        < lowerUncertaintyResult.fisherInformation.trace());
 
     const std::vector<Eigen::Vector3d> insufficientAnchors = {
         Eigen::Vector3d(-5.0, 0.0, 0.0),
@@ -94,6 +205,26 @@ void runCrlbValidationTests()
     assert(degenerateResult.usedPseudoInverse);
     assert(degenerateResult.rank < 3);
     assert(!degenerateResult.warning.empty());
+
+    std::vector<Eigen::Vector3d> coincidentAnchors = defaultAnchors;
+    coincidentAnchors.push_back(truePosition);
+    const CrlbResult coincidentResult = calculateRangePositionCrlb(
+        coincidentAnchors,
+        truePosition,
+        rangeStdDev
+    );
+    assert(coincidentResult.valid);
+    assert(coincidentResult.usedPseudoInverse);
+    assert(!coincidentResult.warning.empty());
+
+    const std::vector<Eigen::Vector3d> noUsableAnchors(4, truePosition);
+    const CrlbResult noUsableResult = calculateRangePositionCrlb(
+        noUsableAnchors,
+        truePosition,
+        rangeStdDev
+    );
+    assert(!noUsableResult.valid);
+    assert(!noUsableResult.warning.empty());
 
     const CrlbResult invalidNoiseResult = calculateRangePositionCrlb(defaultAnchors, truePosition, 0.0);
     assert(!invalidNoiseResult.valid);
@@ -107,7 +238,135 @@ void runCrlbValidationTests()
     assert(!nonFiniteNoiseResult.valid);
     assert(!nonFiniteNoiseResult.warning.empty());
 
-    std::cout << "CRLB validation tests passed.\n";
+    auto assertInvalidCovariance = [&](const Eigen::MatrixXd& covariance) {
+        const CrlbResult invalidResult = calculateRangePositionCrlb(
+            defaultAnchors,
+            truePosition,
+            rangeStdDev,
+            covariance
+        );
+        assert(!invalidResult.valid);
+        assert(!invalidResult.warning.empty());
+    };
+
+    const CrlbResult negativeAnchorStdDevResult = calculateRangePositionCrlb(
+        defaultAnchors,
+        truePosition,
+        rangeStdDev,
+        -0.1
+    );
+    assert(!negativeAnchorStdDevResult.valid);
+    assert(!negativeAnchorStdDevResult.warning.empty());
+
+    const CrlbResult infiniteAnchorStdDevResult = calculateRangePositionCrlb(
+        defaultAnchors,
+        truePosition,
+        rangeStdDev,
+        std::numeric_limits<double>::infinity()
+    );
+    assert(!infiniteAnchorStdDevResult.valid);
+    assert(!infiniteAnchorStdDevResult.warning.empty());
+
+    assertInvalidCovariance(Eigen::MatrixXd::Zero(covarianceDimension - 1, covarianceDimension - 1));
+
+    Eigen::MatrixXd nanCovariance = zeroCovariance;
+    nanCovariance(0, 0) = std::numeric_limits<double>::quiet_NaN();
+    assertInvalidCovariance(nanCovariance);
+
+    Eigen::MatrixXd infiniteCovariance = zeroCovariance;
+    infiniteCovariance(0, 0) = std::numeric_limits<double>::infinity();
+    assertInvalidCovariance(infiniteCovariance);
+
+    Eigen::MatrixXd nonsymmetricCovariance = zeroCovariance;
+    nonsymmetricCovariance(0, 1) = 1.0;
+    assertInvalidCovariance(nonsymmetricCovariance);
+
+    Eigen::MatrixXd indefiniteCovariance = zeroCovariance;
+    indefiniteCovariance(0, 0) = -1.0;
+    assertInvalidCovariance(indefiniteCovariance);
+
+    Eigen::MatrixXd roundoffCovariance = zeroCovariance;
+    roundoffCovariance(0, 0) = -1e-12;
+    assert(calculateRangePositionCrlb(
+        defaultAnchors,
+        truePosition,
+        rangeStdDev,
+        roundoffCovariance
+    ).valid);
+
+    std::vector<Eigen::Vector3d> nonFiniteAnchors = defaultAnchors;
+    nonFiniteAnchors[0].x() = std::numeric_limits<double>::infinity();
+    const CrlbResult nonFiniteAnchorResult = calculateRangePositionCrlb(
+        nonFiniteAnchors,
+        truePosition,
+        rangeStdDev
+    );
+    assert(!nonFiniteAnchorResult.valid);
+    assert(!nonFiniteAnchorResult.warning.empty());
+
+    const CrlbResult nonFiniteEvaluationResult = calculateRangePositionCrlb(
+        defaultAnchors,
+        Eigen::Vector3d(std::numeric_limits<double>::quiet_NaN(), 0.0, 0.0),
+        rangeStdDev
+    );
+    assert(!nonFiniteEvaluationResult.valid);
+    assert(!nonFiniteEvaluationResult.warning.empty());
+
+    std::cout << "CRLB validation tests passed.\n" << std::flush;
+}
+
+void runSimulationAnchorNoiseRegressionTest()
+{
+    TestParameters params;
+    params.truePosition = Eigen::Vector3d(0.25, -0.4, 0.75);
+    params.anchorPositions = {
+        Eigen::Vector3d(-2.0, -2.0, -1.0),
+        Eigen::Vector3d( 2.0, -2.0,  0.5),
+        Eigen::Vector3d(-2.0,  2.0,  1.0),
+        Eigen::Vector3d( 2.0,  2.0,  2.0),
+        Eigen::Vector3d( 0.0,  0.0, -2.0),
+    };
+    params.rangeNoiseStdDev = 0.01;
+    params.anchorPosNoiseStdDev = 0.3;
+    params.randomSeed = 123456;
+    params.numRuns = 1;
+    params.algorithm = AlgorithmId::OrdinaryLeastSquaresWikipedia;
+
+    std::mt19937_64 expectedRng = makeRandomEngine(params.randomSeed);
+    const std::vector<double> expectedRanges = generateNoisyRanges(
+        params.truePosition,
+        params.anchorPositions,
+        params.rangeNoiseStdDev,
+        params.rangeOutlierRatio,
+        params.rangeOutlierMagnitude,
+        expectedRng
+    );
+    const std::vector<Eigen::Vector3d> expectedEstimatorAnchors = generateNoisyAnchorPositions(
+        params.anchorPositions,
+        params.anchorPosNoiseStdDev,
+        expectedRng
+    );
+    const Eigen::Vector3d expectedEstimate = ordinaryLeastSquaresWikipedia(
+        expectedEstimatorAnchors,
+        expectedRanges
+    );
+
+    bool hasAnchorRangeMismatch = false;
+    for (size_t i = 0; i < expectedRanges.size(); ++i) {
+        const double solverAnchorRange = (params.truePosition - expectedEstimatorAnchors[i]).norm();
+        hasAnchorRangeMismatch = hasAnchorRangeMismatch
+            || std::abs(solverAnchorRange - expectedRanges[i]) > 1e-6;
+    }
+    assert(hasAnchorRangeMismatch);
+
+    SimulationRunner runner;
+    runner.begin(params);
+    runner.step(1);
+    assert(runner.status() == SimulationRunner::Status::Completed);
+    assert(runner.estimatedPositions().size() == 1);
+    assert(runner.estimatedPositions().front().isApprox(expectedEstimate, 1e-12));
+
+    std::cout << "Simulation anchor-noise regression test passed.\n" << std::flush;
 }
 
 } // namespace
@@ -117,6 +376,7 @@ void runTests(const TestParameters& params)
 {
     std::cout << "Running Tests...\n";
     runCrlbValidationTests();
+    runSimulationAnchorNoiseRegressionTest();
     runComputeResultsValidationTests();
 
     TestParameters testParams = params;
@@ -226,7 +486,8 @@ void runTest(
     auto t0 = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < params.numRuns; i++)
     {
-        // Generate noisy anchor positions if anchor position noise is specified
+        // Ranges use the physical anchors; only the coordinates supplied to the
+        // estimator receive independent survey/coordinate noise.
         std::vector<Eigen::Vector3d> anchorPositions = params.anchorPositions;
         if (params.anchorPosNoiseStdDev > 0.0)
         {

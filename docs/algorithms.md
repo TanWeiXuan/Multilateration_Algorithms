@@ -34,13 +34,23 @@ First solves a range-standard-deviation-weighted LLS-I system, then applies the 
 
 ## CRLB Analysis
 
-`calculateRangePositionCrlb(anchorPositions, evaluationPosition, rangeStdDev)` accumulates the Fisher information matrix for independent, equal-variance range measurements and computes a symmetric CRLB through self-adjoint eigendecomposition.
+`calculateRangePositionCrlb` computes a local first-order Fisher information matrix and symmetric CRLB. Its overloads support:
+
+- exact anchors through `calculateRangePositionCrlb(anchorPositions, evaluationPosition, rangeStdDev)`;
+- independent isotropic anchor-coordinate uncertainty through an additional scalar `anchorPositionStdDev`; and
+- anisotropic and correlated anchor errors through a full `3N x 3N` `anchorPositionCovariance`.
+
+The uncertain-anchor overloads use the effective range covariance $S=R+BC_aB^\top$ and information $J_x=U^\top S^{-1}U$. The implementation solves a symmetric linear system instead of explicitly forming an inverse.
 
 - `rangeStdDev` must be positive and finite.
+- Scalar anchor-position standard deviation must be finite and nonnegative.
+- A full covariance must have the correct dimensions, contain finite values, and be symmetric positive semidefinite within the documented numerical tolerance.
 - Anchors at the evaluation position are skipped and reported.
 - Full-rank geometry returns the ordinary inverse bound.
 - Rank-deficient geometry returns a pseudoinverse representation, sets `usedPseudoInverse`, reports rank and warning text, and notes that the true bound is unbounded in missing directions.
 - No usable anchors or eigendecomposition failure returns `valid == false`.
+
+See [Cramer-Rao Bound with Anchor-Position Uncertainty](crlb.md) for the derivation, line-of-sight interpretation, API examples, assumptions, and limitations.
 
 ## Input Expectations
 

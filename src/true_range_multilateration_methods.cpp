@@ -483,6 +483,66 @@ CrlbResult calculateRangePositionCrlb(
     double rangeStdDev
 )
 {
+    return calculateRangePositionCrlb(
+        anchorPositions,
+        evaluationPosition,
+        rangeStdDev,
+        0.0
+    );
+}
+
+CrlbResult calculateRangePositionCrlb(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const Eigen::Vector3d& evaluationPosition,
+    double rangeStdDev,
+    double anchorPositionStdDev
+)
+{
+    if (anchorPositionStdDev < 0.0 || !std::isfinite(anchorPositionStdDev)) {
+        CrlbResult result;
+        result.usedPseudoInverse = true;
+        result.warning = "Anchor-position standard deviation must be nonnegative and finite.";
+        return result;
+    }
+
+    if (anchorPositions.size() > static_cast<size_t>(std::numeric_limits<Eigen::Index>::max() / 3)) {
+        CrlbResult result;
+        result.usedPseudoInverse = true;
+        result.warning = "Too many anchors to construct the anchor-position covariance matrix.";
+        return result;
+    }
+
+    const Eigen::Index covarianceDimension = 3 * static_cast<Eigen::Index>(anchorPositions.size());
+    Eigen::MatrixXd anchorPositionCovariance = Eigen::MatrixXd::Zero(
+        covarianceDimension,
+        covarianceDimension
+    );
+    if (anchorPositionStdDev > 0.0) {
+        const double anchorVariance = anchorPositionStdDev * anchorPositionStdDev;
+        if (!std::isfinite(anchorVariance)) {
+            CrlbResult result;
+            result.usedPseudoInverse = true;
+            result.warning = "Anchor-position variance overflowed; use a smaller standard deviation.";
+            return result;
+        }
+        anchorPositionCovariance.diagonal().setConstant(anchorVariance);
+    }
+
+    return calculateRangePositionCrlb(
+        anchorPositions,
+        evaluationPosition,
+        rangeStdDev,
+        anchorPositionCovariance
+    );
+}
+
+CrlbResult calculateRangePositionCrlb(
+    const std::vector<Eigen::Vector3d>& anchorPositions,
+    const Eigen::Vector3d& evaluationPosition,
+    double rangeStdDev,
+    const Eigen::MatrixXd& anchorPositionCovariance
+)
+{
     CrlbResult result;
 
     auto appendWarning = [&result](const std::string& warning) {
@@ -499,26 +559,124 @@ CrlbResult calculateRangePositionCrlb(
         return result;
     }
 
+    if (anchorPositions.size() > static_cast<size_t>(std::numeric_limits<Eigen::Index>::max() / 3)) {
+        result.usedPseudoInverse = true;
+        appendWarning("Too many anchors to validate the anchor-position covariance matrix.");
+        return result;
+    }
+
+    if (!evaluationPosition.allFinite()) {
+        result.usedPseudoInverse = true;
+        appendWarning("CRLB evaluation position must contain only finite coordinates.");
+        return result;
+    }
+
+    for (const Eigen::Vector3d& anchorPosition : anchorPositions) {
+        if (!anchorPosition.allFinite()) {
+            result.usedPseudoInverse = true;
+            appendWarning("Anchor positions must contain only finite coordinates.");
+            return result;
+        }
+    }
+
+    const Eigen::Index anchorCount = static_cast<Eigen::Index>(anchorPositions.size());
+    const Eigen::Index covarianceDimension = 3 * anchorCount;
+    if (anchorPositionCovariance.rows() != covarianceDimension ||
+        anchorPositionCovariance.cols() != covarianceDimension) {
+        result.usedPseudoInverse = true;
+        appendWarning(std::format(
+            "Anchor-position covariance must have dimensions {} x {} for {} anchors.",
+            covarianceDimension,
+            covarianceDimension,
+            anchorCount
+        ));
+        return result;
+    }
+
+    if (!anchorPositionCovariance.allFinite()) {
+        result.usedPseudoInverse = true;
+        appendWarning("Anchor-position covariance must contain only finite values.");
+        return result;
+    }
+
+    Eigen::MatrixXd validatedCovariance = anchorPositionCovariance;
+    if (covarianceDimension > 0) {
+        const double covarianceScale = std::max(
+            1.0,
+            anchorPositionCovariance.cwiseAbs().maxCoeff()
+        );
+        constexpr double covarianceToleranceFactor = 1e-10;
+        const double covarianceTolerance = covarianceToleranceFactor * covarianceScale;
+        const double maxAsymmetry =
+            (anchorPositionCovariance - anchorPositionCovariance.transpose()).cwiseAbs().maxCoeff();
+        if (maxAsymmetry > covarianceTolerance) {
+            result.usedPseudoInverse = true;
+            appendWarning("Anchor-position covariance is materially nonsymmetric.");
+            return result;
+        }
+
+        validatedCovariance = 0.5 * (
+            anchorPositionCovariance + anchorPositionCovariance.transpose()
+        );
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> covarianceEigensolver(validatedCovariance);
+        if (covarianceEigensolver.info() != Eigen::Success) {
+            result.usedPseudoInverse = true;
+            appendWarning("Failed to decompose the anchor-position covariance matrix.");
+            return result;
+        }
+
+        const Eigen::VectorXd covarianceEigenvalues = covarianceEigensolver.eigenvalues();
+        if (covarianceEigenvalues.minCoeff() < -covarianceTolerance) {
+            result.usedPseudoInverse = true;
+            appendWarning("Anchor-position covariance is not positive semidefinite.");
+            return result;
+        }
+
+        // Project only roundoff-sized negative eigenvalues to zero. The documented
+        // 1e-10 * max(1, max |C_a|) threshold is also used for symmetry validation.
+        if (covarianceEigenvalues.minCoeff() < 0.0) {
+            validatedCovariance = covarianceEigensolver.eigenvectors()
+                * covarianceEigenvalues.cwiseMax(0.0).asDiagonal()
+                * covarianceEigensolver.eigenvectors().transpose();
+            validatedCovariance = 0.5 * (validatedCovariance + validatedCovariance.transpose());
+        }
+    }
+
     if (anchorPositions.size() < 4) {
         result.usedPseudoInverse = true;
         appendWarning("Fewer than 4 anchors cannot fully constrain a 3D true-range position; displaying pseudo-inverse CRLB.");
     }
 
-    const double inverseVariance = 1.0 / (rangeStdDev * rangeStdDev);
-    constexpr double minRange = 1e-12;
-    size_t usableAnchorCount = 0;
+    const double rangeVariance = rangeStdDev * rangeStdDev;
+    if (!std::isfinite(rangeVariance)) {
+        result.usedPseudoInverse = true;
+        appendWarning("Range variance overflowed; use a smaller standard deviation.");
+        return result;
+    }
 
-    for (const Eigen::Vector3d& anchorPosition : anchorPositions) {
+    constexpr double minRange = 1e-12;
+    Eigen::MatrixXd U(anchorCount, 3);
+    Eigen::MatrixXd B = Eigen::MatrixXd::Zero(anchorCount, covarianceDimension);
+    Eigen::Index usableAnchorCount = 0;
+
+    for (Eigen::Index anchorIndex = 0; anchorIndex < anchorCount; ++anchorIndex) {
+        const Eigen::Vector3d& anchorPosition = anchorPositions[static_cast<size_t>(anchorIndex)];
         const Eigen::Vector3d delta = evaluationPosition - anchorPosition;
         const double rho = delta.norm();
+        if (!delta.allFinite() || !std::isfinite(rho)) {
+            result.usedPseudoInverse = true;
+            appendWarning("Anchor-to-evaluation geometry overflowed during CRLB calculation.");
+            return result;
+        }
         if (rho <= minRange) {
             result.usedPseudoInverse = true;
             appendWarning("An anchor is too close to the CRLB evaluation position and was skipped.");
             continue;
         }
 
-        const Eigen::Vector3d h = delta / rho;
-        result.fisherInformation += inverseVariance * (h * h.transpose());
+        const Eigen::Vector3d u = delta / rho;
+        U.row(usableAnchorCount) = u.transpose();
+        B.block<1, 3>(usableAnchorCount, 3 * anchorIndex) = -u.transpose();
         ++usableAnchorCount;
     }
 
@@ -526,6 +684,45 @@ CrlbResult calculateRangePositionCrlb(
         result.valid = false;
         result.usedPseudoInverse = true;
         appendWarning("No usable anchors remain after input validation.");
+        return result;
+    }
+
+    U.conservativeResize(usableAnchorCount, Eigen::NoChange);
+    B.conservativeResize(usableAnchorCount, Eigen::NoChange);
+
+    Eigen::MatrixXd effectiveRangeCovariance =
+        rangeVariance * Eigen::MatrixXd::Identity(usableAnchorCount, usableAnchorCount)
+        + B * validatedCovariance * B.transpose();
+    effectiveRangeCovariance = 0.5 * (
+        effectiveRangeCovariance + effectiveRangeCovariance.transpose()
+    );
+    if (!effectiveRangeCovariance.allFinite()) {
+        result.usedPseudoInverse = true;
+        appendWarning("Effective range covariance contains nonfinite values.");
+        return result;
+    }
+
+    Eigen::LLT<Eigen::MatrixXd> covarianceFactorization(effectiveRangeCovariance);
+    if (covarianceFactorization.info() != Eigen::Success) {
+        result.usedPseudoInverse = true;
+        appendWarning("Failed to factor the effective range covariance matrix.");
+        return result;
+    }
+
+    const Eigen::MatrixXd weightedJacobian = covarianceFactorization.solve(U);
+    if (covarianceFactorization.info() != Eigen::Success || !weightedJacobian.allFinite()) {
+        result.usedPseudoInverse = true;
+        appendWarning("Failed to solve with the effective range covariance matrix.");
+        return result;
+    }
+
+    result.fisherInformation = U.transpose() * weightedJacobian;
+    result.fisherInformation = 0.5 * (
+        result.fisherInformation + result.fisherInformation.transpose()
+    );
+    if (!result.fisherInformation.allFinite()) {
+        result.usedPseudoInverse = true;
+        appendWarning("Fisher information matrix contains nonfinite values.");
         return result;
     }
 
