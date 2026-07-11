@@ -26,7 +26,7 @@ jobs:
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
         with:
-          version: latest
+          version: 6.0.0
 
       - name: Configure
         run: emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release -DMULTILAT_BUILD_WEBAPP=ON -DMULTILAT_BUILD_CLI=OFF
@@ -42,11 +42,14 @@ jobs:
           test -s build-web/bin/index.js
           test -s build-web/bin/index.wasm
 
+          rm -rf dist-pages
           mkdir -p dist-pages
-          cp build-web/bin/index.html dist-pages/
-          cp build-web/bin/index.js dist-pages/
-          cp build-web/bin/index.wasm dist-pages/
+          cp -a build-web/bin/. dist-pages/
           touch dist-pages/.nojekyll
+
+          test -s dist-pages/index.html
+          test -s dist-pages/index.js
+          test -s dist-pages/index.wasm
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'

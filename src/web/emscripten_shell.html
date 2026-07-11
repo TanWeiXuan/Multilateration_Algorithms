@@ -23,14 +23,56 @@
         border: 0;
         touch-action: none;
       }
+
+      #startup-error {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        box-sizing: border-box;
+        background: rgba(0, 0, 0, 0.82);
+        color: #fff;
+        font: 16px/1.5 system-ui, sans-serif;
+        text-align: center;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
     <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+    <div id="startup-error" role="alert" aria-live="assertive"></div>
     <script>
+      function showStartupError(message, detail) {
+        console.error(message, detail);
+
+        const overlay = document.getElementById('startup-error');
+        if (!overlay) {
+          return;
+        }
+
+        overlay.textContent = message;
+        overlay.style.display = 'flex';
+      }
+
       var Module = {
-        canvas: document.getElementById('canvas')
+        canvas: document.getElementById('canvas'),
+        onAbort: function(reason) {
+          showStartupError('The web application could not start.', reason);
+        }
       };
+
+      window.addEventListener('error', function(event) {
+        const detail = event.error || event.message || event;
+        showStartupError('The web application encountered a startup error.', detail);
+      });
+
+      window.addEventListener('unhandledrejection', function(event) {
+        const detail = event.reason || event;
+        showStartupError('The web application encountered an unexpected error.', detail);
+      });
     </script>
     {{{ SCRIPT }}}
   </body>

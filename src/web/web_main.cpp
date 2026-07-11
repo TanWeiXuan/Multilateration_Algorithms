@@ -163,7 +163,6 @@ EM_JS(void, setMobileKeyboardWanted, (int wanted), {
 #endif
 
 namespace {
-WebApp* gApp = nullptr;
 #if defined(__EMSCRIPTEN__)
 bool gMobileKeyboardEnabled = false;
 
@@ -235,8 +234,8 @@ EMSCRIPTEN_KEEPALIVE void imgui_mobile_send_escape() {
 }
 #endif
 
-void frame() {
-    gApp->runFrame();
+void runFrame(WebApp& app) {
+    app.runFrame();
 
 #if defined(__EMSCRIPTEN__)
     if (gMobileKeyboardEnabled) {
@@ -245,6 +244,17 @@ void frame() {
     }
 #endif
 }
+
+#if defined(__EMSCRIPTEN__)
+void emscriptenFrame(void* userData) {
+    auto* app = static_cast<WebApp*>(userData);
+    if (!app) {
+        return;
+    }
+
+    runFrame(*app);
+}
+#endif
 }  // namespace
 
 int main() {
@@ -253,23 +263,24 @@ int main() {
     SetTargetFPS(60);
     rlImGuiSetup(true);
 
-    WebApp app;
-    gApp = &app;
-
 #if defined(__EMSCRIPTEN__)
+    static WebApp app;
+
     gMobileKeyboardEnabled = isMobileTouchDevice() != 0;
     if (gMobileKeyboardEnabled) {
         initMobileKeyboardProxy();
     }
     installViewportResizeHandlers();
-    emscripten_set_main_loop(frame, 0, true);
+    emscripten_set_main_loop_arg(emscriptenFrame, &app, 0, false);
+    return 0;
 #else
+    WebApp app;
     while (!WindowShouldClose()) {
-        frame();
+        runFrame(app);
     }
-#endif
 
     rlImGuiShutdown();
     CloseWindow();
     return 0;
+#endif
 }
