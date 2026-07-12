@@ -165,7 +165,7 @@ For full-rank $J_x$, `crlb` is the ordinary inverse. If the geometry has an unob
 
 For a full-rank result:
 
-- `crlb(i, i)` is the lower bound on variance along axis $i$, in m$^2$.
+- `crlb(i, i)` is the lower bound on variance along axis $i$, in $m^2$.
 - $\sqrt{\operatorname{crlb}(i,i)}$ is the corresponding per-axis lower-bound standard deviation, in metres.
 - A scalar position-error bound can be reported as
 
